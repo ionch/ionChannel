@@ -1,0 +1,48 @@
+buildscript {
+	repositories {
+		mavenCentral();
+		jcenter();
+		maven {
+			url "https://plugins.gradle.org/m2/";
+		}
+	}
+	
+	dependencies {
+		classpath "com.github.jengelman.gradle.plugins:shadow:2.0.0";
+		classpath "gradle.plugin.net.minecrell:licenser:0.3";
+	}
+}
+
+apply plugin: "java";
+apply plugin: "com.github.johnrengelman.shadow";
+apply plugin: "net.minecrell.licenser";
+
+group = "io.github.ionch";
+archivesBaseName = "IonChannel";
+version = "0.0.1";
+
+repositories {
+	mavenCentral();
+	jcenter();
+}
+
+dependencies {
+	testCompile "junit:junit:4.12";
+	
+	shadow group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2";
+}
+
+artifacts {
+    archives shadowJar;
+}
+
+license {
+	sourceSets = [project.sourceSets.main]
+	
+    include '**/*.java';
+    
+    exclude "/doc/**";
+    exclude "**/*.json";
+    exclude "**/*.hjson";
+    exclude "**/*.png";
+}
