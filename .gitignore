@@ -21,6 +21,7 @@ hs_err_pid*
 ## IDE section
 .project
 .settings
+.classpath
 
 ## Gradle Section
 .gradle
@@ -41,3 +42,10 @@ gradle-app.setting
 
 ## Linux Section
 .directory
+
+
+
+
+## Misc
+
+bin/
