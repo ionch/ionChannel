@@ -19,12 +19,12 @@ package social.ionch.core.activitypub;
 import java.util.UUID;
 
 public class User implements ActivityStreams.Attribution {
-	private UUID id;
+	private int id;
 	private String name;
 	private String displayName;
 	
 	/** This is an identifier for this user which is guaranteed to be unique and persistent, but isn't very human-readable. */
-	public UUID getId() {
+	public int getId() {
 		return id;
 	}
 	
