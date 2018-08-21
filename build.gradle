@@ -8,7 +8,7 @@ buildscript {
 	}
 	
 	dependencies {
-		classpath "com.github.jengelman.gradle.plugins:shadow:2.0.0";
+		classpath "com.github.jengelman.gradle.plugins:shadow:2.0.4";
 		classpath "gradle.plugin.net.minecrell:licenser:0.3";
 	}
 }
@@ -24,9 +24,15 @@ version = "0.0.1";
 sourceCompatibility = 1.8;
 targetCompatibility = 1.8;
 
+defaultTasks 'clean', 'shadowJar', 'apiJar';
+
 repositories {
 	mavenCentral();
 	jcenter();
+}
+
+configurations {
+	api.extendsFrom shadow
 }
 
 dependencies {
@@ -53,6 +59,16 @@ dependencies {
 
 artifacts {
     archives shadowJar;
+}
+
+task apiJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+	classifier = "api";
+	from(sourceSets.main.output) {
+		//exclude "social/ionch/**";
+        include "social/ionch/core/api/**";
+    }
+    
+    configurations = [ project.configurations.shadow ];
 }
 
 license {
