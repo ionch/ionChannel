@@ -46,6 +46,9 @@ dependencies {
 	
 	compile group: "org.glassfish.grizzly", name: "grizzly-http-server", version: "2.4.0";
 	shadow group: "org.glassfish.grizzly", name: "grizzly-http-server", version: "2.4.0";
+	
+	compile group: "com.google.guava", name: "guava", version: "23.5-jre";
+	shadow group: "com.google.guava", name: "guava", version: "23.5-jre";
 }
 
 artifacts {

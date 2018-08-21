@@ -57,7 +57,7 @@ public class IonChannel {
 			server.start();
 			
 			//Example Stuff
-			System.out.println("Press a key to stop the server.");
+			System.out.println("Press the enter key to stop the server.");
 			System.in.read();
 			
 			
