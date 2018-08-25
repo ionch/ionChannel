@@ -16,9 +16,7 @@
 
 package social.ionch.core.activitypub;
 
-import java.util.UUID;
-
-public class User implements ActivityStreams.Attribution {
+public class APUser implements ActivityStreams.Attribution {
 	private int id;
 	private String name;
 	private String displayName;
