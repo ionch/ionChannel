@@ -16,7 +16,7 @@
 
 package social.ionch.core.activitypub;
 
-public class Post {
+public class APPost {
 	/** The URI for this post */
 	private String id;
 	/** Always "Note" for regular posts. This field appears slightly freeform. */
