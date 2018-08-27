@@ -64,7 +64,7 @@ artifacts {
 task apiJar(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
 	classifier = "api";
 	from(sourceSets.main.allJava) {
-        include "social/ionch/core/api/**";
+        include "social/ionch/api/**";
     }
     
     configurations = [ project.configurations.shadow ];
