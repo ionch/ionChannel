@@ -1,4 +1,4 @@
-package social.ionch.core.api.impl;
+package social.ionch.api.db;
 
 /**
  * Exception which indicates that something went wrong with database access.

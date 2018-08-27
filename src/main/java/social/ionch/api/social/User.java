@@ -1,4 +1,4 @@
-package social.ionch.core.api;
+package social.ionch.api.social;
 
 /**
  * Represents a person, bot, or other "actor" type which has its own user-profile. A concrete convenience implementation is available

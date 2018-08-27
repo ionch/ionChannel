@@ -14,7 +14,7 @@
  * along with ionChannel.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package social.ionch.core.api;
+package social.ionch.api.module;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

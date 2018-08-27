@@ -1,4 +1,4 @@
-package social.ionch.core.api.impl;
+package social.ionch.api.text;
 
 import com.google.common.html.HtmlEscapers;
 

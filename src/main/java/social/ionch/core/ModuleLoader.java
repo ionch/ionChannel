@@ -23,7 +23,9 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import social.ionch.core.api.Module;
+import com.google.common.util.concurrent.MoreExecutors;
+
+import social.ionch.api.module.Module;
 
 public class ModuleLoader {
 	private static List<ModuleInstanceLoader> instanceLoaders = new ArrayList<>();
@@ -32,5 +34,11 @@ public class ModuleLoader {
 	@Nullable
 	public Module getModule(String id) {
 		return enabled.get(id);
+	}
+	
+	public void registerModule(String id, Module m) {
+		m.enable().addListener(()->{
+			enabled.put(id, m);
+		}, MoreExecutors.directExecutor()); //TODO: Probably use a locally-defined executor so we avoid thread volatility
 	}
 }

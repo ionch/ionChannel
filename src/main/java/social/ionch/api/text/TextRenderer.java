@@ -1,6 +1,4 @@
-package social.ionch.core.api;
-
-import social.ionch.core.api.impl.RenderableText;
+package social.ionch.api.text;
 
 @FunctionalInterface
 public interface TextRenderer {

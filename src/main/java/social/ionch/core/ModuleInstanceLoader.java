@@ -32,9 +32,9 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import social.ionch.core.api.EnableState;
-import social.ionch.core.api.Module;
-import social.ionch.core.api.ModuleMetadata;
+import social.ionch.api.module.EnableState;
+import social.ionch.api.module.Module;
+import social.ionch.api.module.ModuleMetadata;
 
 public class ModuleInstanceLoader extends SecureClassLoader implements Closeable, AutoCloseable, ModuleMetadata {
 	private File moduleFile;

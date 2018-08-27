@@ -1,8 +1,8 @@
-package social.ionch.core.api;
+package social.ionch.api.db;
 
 import javax.annotation.Nullable;
 
-import social.ionch.core.api.impl.DatabaseException;
+import social.ionch.api.social.User;
 
 public interface Database {
 	/** Looks up a user from the specified id. May return null if no user exists for this id. */

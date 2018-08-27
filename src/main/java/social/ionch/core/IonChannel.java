@@ -22,6 +22,9 @@ import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
 
+import social.ionch.api.module.Module;
+import social.ionch.builtin.db.DatabaseModule;
+
 public class IonChannel {
 	public static final String NAME = "IonChannel";
 	public static final String VERSION = "0.0.1";
@@ -32,6 +35,9 @@ public class IonChannel {
 	
 	
 	public static void main(String[] args) {
+		
+		loadBuiltins();
+		
 		HttpServer server = HttpServer.createSimpleServer();
 		ServerConfiguration cfg = server.getServerConfiguration();
 		cfg.setHttpServerName(NAME);
@@ -64,5 +70,12 @@ public class IonChannel {
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
+	}
+	
+	public static void loadBuiltins() {
+		//TODO: THIS IS AN UNWISE TEMPORARY IMPL which loads builtins on the same classloader as the server and forgets about them. They can't fully, truly be disabled like this.
+		
+		DatabaseModule db = new DatabaseModule();
+		db.enable();
 	}
 }

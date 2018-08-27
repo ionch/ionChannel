@@ -1,11 +1,11 @@
-package social.ionch.core.api;
+package social.ionch.api.social;
 
 import java.net.URI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import social.ionch.core.api.impl.RenderableText;
+import social.ionch.api.text.RenderableText;
 
 public interface Post {
 	

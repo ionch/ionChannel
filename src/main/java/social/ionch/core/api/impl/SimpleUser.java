@@ -1,6 +1,6 @@
 package social.ionch.core.api.impl;
 
-import social.ionch.core.api.User;
+import social.ionch.api.social.User;
 
 public class SimpleUser implements User {
 	private int id;
