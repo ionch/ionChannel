@@ -22,8 +22,10 @@ import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
 
+import social.ionch.api.Ionch;
 import social.ionch.api.module.Module;
 import social.ionch.builtin.db.DatabaseModule;
+import social.ionch.core.module.BaseModuleLoader;
 
 public class IonChannel {
 	public static final String NAME = "IonChannel";
@@ -36,6 +38,7 @@ public class IonChannel {
 	
 	public static void main(String[] args) {
 		
+		Ionch.registerModuleLoader(new BaseModuleLoader());
 		loadBuiltins();
 		
 		HttpServer server = HttpServer.createSimpleServer();

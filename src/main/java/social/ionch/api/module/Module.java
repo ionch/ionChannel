@@ -43,4 +43,13 @@ public interface Module {
 	 * to nuke it from orbit.
 	 */
 	void forceStop();
+	
+	/**
+	 * Receives an inter-process message to this module. If global is true, this message was broadcast to all
+	 * modules, not aimed at a particular one. It's highly encouraged to use global messages so that other
+	 * modules have an opportunity to respond instead.
+	 */
+	default void receiveMessage(String name, String contents, boolean global) {
+		//By default, do nothing.
+	}
 }

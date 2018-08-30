@@ -14,7 +14,7 @@
  * along with ionChannel.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package social.ionch.core;
+package social.ionch.core.module;
 
 import java.io.Closeable;
 import java.io.File;
@@ -35,6 +35,8 @@ import javax.annotation.Nullable;
 import social.ionch.api.module.EnableState;
 import social.ionch.api.module.Module;
 import social.ionch.api.module.ModuleMetadata;
+import social.ionch.core.PluginException;
+import social.ionch.core.PluginException.Load;
 
 public class ModuleInstanceLoader extends SecureClassLoader implements Closeable, AutoCloseable, ModuleMetadata {
 	private File moduleFile;
