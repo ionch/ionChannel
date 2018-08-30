@@ -17,7 +17,6 @@
 package social.ionch.core.module;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -29,9 +28,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import blue.endless.jankson.Jankson;
+import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.impl.SyntaxError;
 import social.ionch.api.module.EnableState;
 import social.ionch.api.module.Module;
 import social.ionch.api.module.ModuleLoader;
+import social.ionch.core.IonChannel;
 
 public class BaseModuleLoader implements ModuleLoader {
 	@GuardedBy("mutex")
@@ -141,6 +144,28 @@ public class BaseModuleLoader implements ModuleLoader {
 			if (isEnabled(m)) { //Needed because a module in the frozen list might be disabled while message dispatch is happening
 				m.receiveMessage(name, content, true);
 			}
+		}
+	}
+	
+	public void constructBuiltin(Module m, String metadata) {
+		BaseModuleMetadata meta = new BaseModuleMetadata(this.getClass().getClassLoader(), m);
+		meta.setEnableState(EnableState.DISABLED);
+		
+		//TODO: Jankson unpack the metadata
+		try {
+			JsonObject metadataObject = Jankson.builder().build().load(metadata);
+			String moduleId = metadataObject.get(String.class, "id");
+			if (moduleId==null) {
+				IonChannel.LOG.error("Couldn't load builtin module '%s': no 'id' property specified.", m.getClass().getCanonicalName());
+			}
+		} catch (SyntaxError e) {
+			IonChannel.LOG.error("Couldn't load builtin module '"+m.getClass().getCanonicalName()+"'");
+			IonChannel.LOG.error("    "+e.getCompleteMessage());
+		}
+		String id = "foo";
+		
+		synchronized(mutex) {
+			modules.put(id, meta);
 		}
 	}
 }

@@ -16,6 +16,9 @@
 
 package social.ionch.core.module;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import social.ionch.api.module.EnableState;
 import social.ionch.api.module.Module;
 import social.ionch.api.module.ModuleMetadata;
@@ -24,11 +27,17 @@ public class BaseModuleMetadata implements ModuleMetadata {
 	private String id;
 	private String name;
 	private String[] contributors;
-	private EnableState state;
+	private EnableState state = EnableState.DISABLED;
 	private Module module;
 	
 	private ClassLoader classLoader;
+	private Logger logger;
 
+	/* package-private */ BaseModuleMetadata(ClassLoader loader, Module module) {
+		this.classLoader = loader;
+		this.module = module;
+	}
+	
 	
 	@Override
 	public String getId() {
@@ -60,7 +69,16 @@ public class BaseModuleMetadata implements ModuleMetadata {
 		this.state = state;
 	}
 	
-	/* package-private */ void setModule(Module m) {
-		this.module = m;
+	/* package-private */ ClassLoader getClassLoader() {
+		return this.classLoader;
+	}
+	
+	/* package-private */ Logger getLogger() {
+		return logger;
+	}
+	
+	/* package-private */ void setId(String id) {
+		this.id = id;
+		this.logger = LoggerFactory.getLogger("IonChannel/modules/"+id);
 	}
 }

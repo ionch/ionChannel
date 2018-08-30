@@ -21,9 +21,10 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import social.ionch.api.Ionch;
-import social.ionch.api.module.Module;
 import social.ionch.builtin.db.DatabaseModule;
 import social.ionch.core.module.BaseModuleLoader;
 
@@ -35,10 +36,13 @@ public class IonChannel {
 	public static final String SERVER_HEADER = NAME+" "+VERSION+" ("+SLUG+")";
 	public static final String CLACKS = "Natalie Nguyen, Shiina Mota, Natalie Nguyen, Shiina Mota";
 	
+	public static final Logger LOG = LoggerFactory.getLogger("IonChannel");
+	
+	private static BaseModuleLoader LOADER = new BaseModuleLoader();
 	
 	public static void main(String[] args) {
 		
-		Ionch.registerModuleLoader(new BaseModuleLoader());
+		Ionch.registerModuleLoader(LOADER);
 		loadBuiltins();
 		
 		HttpServer server = HttpServer.createSimpleServer();
@@ -66,7 +70,7 @@ public class IonChannel {
 			server.start();
 			
 			//Example Stuff
-			System.out.println("Press the enter key to stop the server.");
+			LOG.info("Press the enter key to stop the server.");
 			System.in.read();
 			
 			
@@ -79,6 +83,8 @@ public class IonChannel {
 		//TODO: THIS IS AN UNWISE TEMPORARY IMPL which loads builtins on the same classloader as the server and forgets about them. They can't fully, truly be disabled like this.
 		
 		DatabaseModule db = new DatabaseModule();
-		db.enable();
+		LOADER.constructBuiltin(db, "{id:'database'}");
+		
+		//db.enable();
 	}
 }
