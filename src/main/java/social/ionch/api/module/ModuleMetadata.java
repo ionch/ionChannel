@@ -19,6 +19,8 @@ package social.ionch.api.module;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.slf4j.Logger;
+
 public interface ModuleMetadata {
 	/**
 	 * Gets the unique id for this module.
@@ -51,4 +53,7 @@ public interface ModuleMetadata {
 	 */
 	@Nullable
 	Module getModule();
+	
+	@Nonnull
+	Logger getLogger();
 }

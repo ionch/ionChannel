@@ -85,6 +85,7 @@ public class IonChannel {
 		DatabaseModule db = new DatabaseModule();
 		LOADER.constructBuiltin(db, "{id:'database'}");
 		
+		LOADER.enableAll(); //Later we'll pull enabled/disabled settings from a config so you can prevent builtins from loading. For now just enable everything we know about.
 		//db.enable();
 	}
 }

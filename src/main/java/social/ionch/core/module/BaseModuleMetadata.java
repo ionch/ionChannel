@@ -64,6 +64,11 @@ public class BaseModuleMetadata implements ModuleMetadata {
 		return module;
 	}
 	
+	@Override
+	public Logger getLogger() {
+		return logger;
+	}
+	
 	
 	/* package-private */ void setEnableState(EnableState state) {
 		this.state = state;
@@ -71,10 +76,6 @@ public class BaseModuleMetadata implements ModuleMetadata {
 	
 	/* package-private */ ClassLoader getClassLoader() {
 		return this.classLoader;
-	}
-	
-	/* package-private */ Logger getLogger() {
-		return logger;
 	}
 	
 	/* package-private */ void setId(String id) {

@@ -38,7 +38,7 @@ import social.ionch.api.module.ModuleMetadata;
 import social.ionch.core.PluginException;
 import social.ionch.core.PluginException.Load;
 
-public class ModuleInstanceLoader extends SecureClassLoader implements Closeable, AutoCloseable, ModuleMetadata {
+public class ModuleInstanceLoader extends SecureClassLoader implements Closeable, AutoCloseable {
 	private File moduleFile;
 	private JarFile jar;
 	private List<String> availableClasses = new ArrayList<>();
@@ -98,57 +98,4 @@ public class ModuleInstanceLoader extends SecureClassLoader implements Closeable
 		}
 	}
 	
-	
-	
-	
-	public void enable() {
-		try {
-			
-		} catch (Throwable t) {
-			//TODO: send to logger and mark module as fatal-errored
-		}
-	}
-	
-	public void disable() {
-		try {
-			
-		} catch (Throwable t) {
-			//TODO: send to logger and mark module as fatal-errored
-		}
-	}
-	
-	/********
-	 * IMPLEMENTATION FOR Module
-	 ********/
-	
-	@Override
-	@Nonnull
-	public String getId() {
-		return id;
-	}
-	
-	@Override
-	@Nullable
-	public String getName() {
-		return name;
-	}
-	
-	@Override
-	@Nonnull
-	public String[] getContributors() {
-		if (authors==null) authors = new String[0];
-		return authors;
-	}
-
-	@Override
-	@Nonnull
-	public EnableState getState() {
-		return state;
-	}
-
-	@Override
-	@Nullable
-	public Module getModule() {
-		return module;
-	}
 }

@@ -24,7 +24,7 @@ public interface Module {
 	 * setup needs which are complete by the time this method returns, so it's entirely appropriate to return
 	 * an already-complete future.
 	 */
-	ListenableFuture<Void> enable();
+	ListenableFuture<Void> enable(ModuleMetadata metadata);
 	
 	/**
 	 * Gracefully stop operation. Once operation has finally stopped, complete the future you provide, so that

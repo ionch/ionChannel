@@ -17,6 +17,7 @@
 package social.ionch.core.module;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -72,15 +73,13 @@ public class BaseModuleLoader implements ModuleLoader {
 		if (state == EnableState.ENABLING | state == EnableState.ENABLED) return true;
 		if (state == EnableState.DISABLING) return false;
 		
-		synchronized(mutex) {
-			meta.setEnableState(EnableState.ENABLING);
-			meta.getModule().enable().addListener(()->{
-				meta.setEnableState(EnableState.ENABLED);
-				synchronized(mutex) {
-					enabled.put(meta.getId(), meta.getModule());
-				}
-			}, MoreExecutors.directExecutor());
-		}
+		meta.setEnableState(EnableState.ENABLING);
+		meta.getModule().enable(meta).addListener(()->{
+			meta.setEnableState(EnableState.ENABLED);
+			synchronized(mutex) {
+				enabled.put(meta.getId(), meta.getModule());
+			}
+		}, MoreExecutors.directExecutor());
 		
 		return true;
 	}
@@ -158,6 +157,8 @@ public class BaseModuleLoader implements ModuleLoader {
 			if (moduleId==null) {
 				IonChannel.LOG.error("Couldn't load builtin module '%s': no 'id' property specified.", m.getClass().getCanonicalName());
 			}
+			
+			meta.setId(moduleId);
 		} catch (SyntaxError e) {
 			IonChannel.LOG.error("Couldn't load builtin module '"+m.getClass().getCanonicalName()+"'");
 			IonChannel.LOG.error("    "+e.getCompleteMessage());
@@ -167,5 +168,17 @@ public class BaseModuleLoader implements ModuleLoader {
 		synchronized(mutex) {
 			modules.put(id, meta);
 		}
+	}
+	
+	public void enableAll() {
+		ImmutableList<BaseModuleMetadata> toEnable;
+		synchronized(modules) {
+			toEnable = ImmutableList.copyOf(modules.values());
+		}
+		
+		for(BaseModuleMetadata meta : toEnable) {
+			enableModule(meta);
+		}
+		
 	}
 }
