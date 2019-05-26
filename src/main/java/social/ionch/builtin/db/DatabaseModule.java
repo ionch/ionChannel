@@ -19,6 +19,7 @@ package social.ionch.builtin.db;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import social.ionch.api.Ionch;
 import social.ionch.api.module.Module;
 import social.ionch.api.module.ModuleMetadata;
 
@@ -26,7 +27,8 @@ public class DatabaseModule implements Module {
 
 	@Override
 	public ListenableFuture<Void> enable(ModuleMetadata metadata) {
-		//Ionch.registerDatabase(db);
+		//TODO: receive settings, and enable an h2 database instead.
+		Ionch.registerDatabase(new FlatfileDatabase("data"));
 		metadata.getLogger().info("DB Module enabled.");
 		
 		return Futures.immediateFuture(null);

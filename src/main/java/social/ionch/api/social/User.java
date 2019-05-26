@@ -17,22 +17,53 @@
 package social.ionch.api.social;
 
 /**
- * Represents a person, bot, or other "actor" type which has its own user-profile. A concrete convenience implementation is available
- * at {@link social.ionch.core.impl.SimpleUser}
+ * Represents a person, bot, or other "actor" type which has its own user-profile. Could be local or remote.
  * 
- * <p>This class and its concrete implementations may be implemented or subclassed, with the following caveats:
- * <ul>
- *   <li>Any subclass MUST implement {@link #equals(Object)} and {@link #hashCode()}
- *   <li>Any added fields which are not part of this interface MAY be silently ignored by any Module including Database serializers.
- * </ul>
+ * <p>When using User objects, please be aware that the instant you "check out" a user from the Database, it goes stale. It represents the
+ * object's state at the moment of checkout, or in the case of Activity-embedded users, the moment the Activity was Created.
  */
-public interface User {
-	/** Gets the persistent, server-unique key that identifies this User. */
-	public int getId();
+public class User {
+	/** Globally-unique URI which represents this user. In practice, an https URL this object can be requested from. */
+	protected String id;
+	/** The user's internal, official ID. Can be changed, and if you think otherwise, fight me. */
+	protected String username;
+	/** The user's human-readable name. In ActivityPub this could be a map of language-tagged names, but in practice this is not the case. */
+	protected String displayName;
+	/** The ActivityPub "core Actor type" of this object. This value may not describe the whole type of the object, but it must accurately reflect the general category. By default Ionch only assigns profiles to Person objects. */
+	protected Type type = Type.PERSON;
 	
-	/** Gets the semi-persistent human-readable name of this User, such as the "user" in "@user@instance.town" */
-	public String getName();
 	
-	/** Gets the ephemeral display-name for this User, which may contain non-alphanumerics, emoji, custom emoji shortcodes, and html markup */
-	public String getDisplayName();
+	
+	/** Gets the globally-unique ActivityPub URI (anyURI) which represents this user. In practice, this is generally an https URL where this object can be requested from. */
+	public String getId() {
+		return id;
+	}
+	
+	/** Gets the semi-persistent human-readable name of this User, such as the "user" in "@user@instance.town". This matches up to the "preferredUsername" key */
+	public String getUsername() {
+		return username;
+	}
+	
+	/** Gets the ephemeral display-name for this User, which may contain non-alphanumerics, emoji, and custom emoji shortcodes. IF SENT OVER ACTIVITYPUB, STRIP ALL HTML but not the shortcodes, because Mastodon pretends shortcodes aren't markup. */
+	public String getDisplayName() {
+		return displayName;
+	}
+	
+	public static enum Type {
+		PERSON("Person"),
+		APPLICATION("Application"),
+		GROUP("Group"),
+		ORGANIZATION("Organization"),
+		SERVICE("Service");
+		
+		private final String value;
+		
+		Type(String stringValue) {
+			this.value = stringValue;
+		}
+		
+		public String toString() {
+			return value;
+		}
+	}
 }

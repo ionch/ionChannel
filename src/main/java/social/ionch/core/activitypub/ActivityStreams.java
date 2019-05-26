@@ -124,8 +124,11 @@ public interface ActivityStreams {
 	}
 	
 	public interface Actor extends Object, Attribution {
-		/** Application, Group, Organization, Person, or Service */
+		/** This is supposed to be a URL which, if queried as some flavor of 'application/json', can yield *this data* */
+		String getId();
+		/** Known types are Application, Group, Organization, Person, or Service */
 		String getType();
+		/** Human-readable name, can contain spaces or weird unicode but not markup. */
 		String getName();
 	}
 	
