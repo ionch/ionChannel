@@ -56,6 +56,8 @@ public class IonChannel {
 		server.getServerConfiguration().addHttpHandler( //Example Stuff
 			    new HttpHandler() {
 			        public void service(Request request, Response response) throws Exception {
+			        	//Todo: Match against REST endpoint handlers
+			        	
 			        	String responseBody = "<h1>It works!</h1><p>"+request.getDecodedRequestURI()+"</p>";
 			            response.setContentType("text/html");
 			            response.setContentLength(responseBody.length());
