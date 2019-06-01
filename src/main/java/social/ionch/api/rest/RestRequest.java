@@ -16,6 +16,7 @@ import com.google.common.io.CharStreams;
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.impl.SyntaxError;
 import social.ionch.api.social.JsonResourceDescriptor;
+import social.ionch.api.social.User;
 
 /** Represents an *outgoing* rest request. */
 public class RestRequest {
@@ -137,5 +138,33 @@ public class RestRequest {
 		} else {
 			throw new IOException("No response from host.");
 		}
+	}
+	
+	@Nonnull
+	public static User getRemoteUser(String url) throws IOException, SyntaxError {
+		//TODO: Cleanup URL and mangle url to force https method
+		
+		RestResponse response = new RestRequest(url)
+				.contentType("application/json")
+				.requireHttps()
+				.run();
+		
+		if (response.didError()) throw new IOException(response.getError());
+		
+		if (response.didRespond()) {
+			Jankson jankson = Jankson.builder().build();
+			return jankson.fromJson(response.content, User.class);
+		} else {
+			throw new IOException("No response from host.");
+		}
+	}
+	
+	@Nonnull
+	public static User getRemoteUserByName(String server, String username) throws IOException, SyntaxError {
+		JsonResourceDescriptor jrd = webfinger(server, username);
+		String selfRef = jrd.getLinkHref("self");
+		if (selfRef==null) throw new IOException("No 'self' reference in webfinger profile.");
+		
+		return getRemoteUser(selfRef);
 	}
 }
