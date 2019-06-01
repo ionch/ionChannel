@@ -8,9 +8,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.google.common.io.CharStreams;
+
+import blue.endless.jankson.Jankson;
+import blue.endless.jankson.impl.SyntaxError;
+import social.ionch.api.social.JsonResourceDescriptor;
 
 /** Represents an *outgoing* rest request. */
 public class RestRequest {
@@ -84,6 +89,53 @@ public class RestRequest {
 			
 		} catch (IOException e) {
 			return new RestResponse(e);
+		}
+	}
+	
+	
+	//The following are prerolled JRD requests that probably don't belong in this class. But for now they're useful, practical examples
+	//TODO: Better server scrubbing, also needed for requireHttps()
+	
+	@Nonnull
+	public static JsonResourceDescriptor webfinger(String server, String id) throws IOException, SyntaxError {
+		if (id.startsWith("@")) id = id.substring(1);
+		if (server.endsWith("/")) server = server.substring(0, server.length()-1);
+		if (server.startsWith("http://")) server = server.substring("http://".length());
+		if (server.startsWith("https://")) server = server.substring("https://".length());
+		
+		RestResponse response = new RestRequest("https://"+server+"/.well-known/webfinger?resource=acct:"+id)
+			.contentType("application/json, application/jrd+json")
+			.requireHttps()
+			.run();
+		
+		if (response.didError()) throw new IOException(response.getError());
+		
+		if (response.didRespond()) {
+			Jankson jankson = Jankson.builder().build();
+			return jankson.fromJson(response.content, JsonResourceDescriptor.class);
+		} else {
+			throw new IOException("No response from host.");
+		}
+	}
+	
+	@Nonnull
+	public static JsonResourceDescriptor getNodeInfo(String server) throws IOException, SyntaxError {
+		if (server.endsWith("/")) server = server.substring(0, server.length()-1);
+		if (server.startsWith("http://")) server = server.substring("http://".length());
+		if (server.startsWith("https://")) server = server.substring("https://".length());
+		
+		RestResponse response = new RestRequest("https://"+server+"/.well-known/nodeinfo")
+				.contentType("application/json, application/jrd+json")
+				.requireHttps()
+				.run();
+		
+		if (response.didError()) throw new IOException(response.getError());
+		
+		if (response.didRespond()) {
+			Jankson jankson = Jankson.builder().build();
+			return jankson.fromJson(response.content, JsonResourceDescriptor.class);
+		} else {
+			throw new IOException("No response from host.");
 		}
 	}
 }
