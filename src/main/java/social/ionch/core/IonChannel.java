@@ -24,8 +24,14 @@ import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+
 import social.ionch.api.Ionch;
+import social.ionch.builtin.activitypub.ActivityPubModule;
 import social.ionch.builtin.db.DatabaseModule;
+import social.ionch.builtin.mastodon.MastodonModule;
+import social.ionch.builtin.oauth.OAuthModule;
 import social.ionch.core.module.BaseModuleLoader;
 
 public class IonChannel {
@@ -43,8 +49,25 @@ public class IonChannel {
 	public static void main(String[] args) {
 		
 		Ionch.registerModuleLoader(LOADER);
-		loadBuiltins();
+		ListenableFuture<Void> enabled = loadBuiltins();
 		
+		enabled.addListener(()->{
+			System.out.println("module_status {");
+			for(String s : LOADER.getAvailableModules()) {
+				System.out.println("    "+s+": "+LOADER.getModuleState(s));
+			}
+			System.out.println("}");
+			
+			
+			
+			startServer();
+			
+		}, MoreExecutors.directExecutor());
+		
+		
+	}
+	
+	public static void startServer() {
 		HttpServer server = HttpServer.createSimpleServer();
 		ServerConfiguration cfg = server.getServerConfiguration();
 		cfg.setHttpServerName(NAME);
@@ -57,6 +80,8 @@ public class IonChannel {
 			    new HttpHandler() {
 			        public void service(Request request, Response response) throws Exception {
 			        	//Todo: Match against REST endpoint handlers
+			        	
+			        	
 			        	
 			        	String responseBody = "<h1>It works!</h1><p>"+request.getDecodedRequestURI()+"</p>";
 			            response.setContentType("text/html");
@@ -81,13 +106,25 @@ public class IonChannel {
 		}
 	}
 	
-	public static void loadBuiltins() {
+	public static ListenableFuture<Void> loadBuiltins() {
 		//TODO: THIS IS AN UNWISE TEMPORARY IMPL which loads builtins on the same classloader as the server and forgets about them. They can't fully, truly be disabled like this.
 		
 		DatabaseModule db = new DatabaseModule();
 		LOADER.constructBuiltin(db, "{id:'database'}");
 		
-		LOADER.enableAll(); //Later we'll pull enabled/disabled settings from a config so you can prevent builtins from loading. For now just enable everything we know about.
+		ActivityPubModule ap = new ActivityPubModule();
+		LOADER.constructBuiltin(ap, "{id:'activitypub'}");
+		
+		MastodonModule mo = new MastodonModule();
+		LOADER.constructBuiltin(mo, "{id:'mastodon'}");
+		
+		OAuthModule oa = new OAuthModule();
+		LOADER.constructBuiltin(oa, "{id:'oauth2'}");
+		
+		ListenableFuture<Void> enabled = LOADER.enableAll(); //Later we'll pull enabled/disabled settings from a config so you can prevent builtins from loading. For now just enable everything we know about.
 		//db.enable();
+		return enabled;
+		
+		//TODO: set a listener for when loader finds all modules loaded - some kind of future chain or shared future
 	}
 }

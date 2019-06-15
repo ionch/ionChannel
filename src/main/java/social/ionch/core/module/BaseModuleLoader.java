@@ -16,9 +16,12 @@
 
 package social.ionch.core.module;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
@@ -27,6 +30,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import blue.endless.jankson.Jankson;
@@ -36,6 +41,7 @@ import social.ionch.api.module.EnableState;
 import social.ionch.api.module.Module;
 import social.ionch.api.module.ModuleLoader;
 import social.ionch.core.IonChannel;
+import social.ionch.core.PluginException;
 
 public class BaseModuleLoader implements ModuleLoader {
 	@GuardedBy("mutex")
@@ -68,20 +74,22 @@ public class BaseModuleLoader implements ModuleLoader {
 		return true;
 	}
 	
-	public boolean enableModule(BaseModuleMetadata meta) {
+	public ListenableFuture<Void> enableModule(BaseModuleMetadata meta) {
 		EnableState state = meta.getState();
-		if (state == EnableState.ENABLING | state == EnableState.ENABLED) return true;
-		if (state == EnableState.DISABLING) return false;
+		if (state == EnableState.ENABLING | state == EnableState.ENABLED) return Futures.immediateFuture(null);
+		if (state == EnableState.DISABLING) return Futures.immediateFailedFuture(new PluginException("Plugin cannot be enabled while it's disabling."));
 		
 		meta.setEnableState(EnableState.ENABLING);
-		meta.getModule().enable(meta).addListener(()->{
+		ListenableFuture<Void> future = meta.getModule().enable(meta);
+		
+		future.addListener(()->{
 			meta.setEnableState(EnableState.ENABLED);
 			synchronized(mutex) {
 				enabled.put(meta.getId(), meta.getModule());
 			}
 		}, MoreExecutors.directExecutor());
 		
-		return true;
+		return future;
 	}
 
 	@Override
@@ -163,22 +171,26 @@ public class BaseModuleLoader implements ModuleLoader {
 			IonChannel.LOG.error("Couldn't load builtin module '"+m.getClass().getCanonicalName()+"'");
 			IonChannel.LOG.error("    "+e.getCompleteMessage());
 		}
-		String id = "foo";
+		String id = meta.getId();
 		
 		synchronized(mutex) {
 			modules.put(id, meta);
 		}
 	}
 	
-	public void enableAll() {
+	public ListenableFuture<Void> enableAll() {
 		ImmutableList<BaseModuleMetadata> toEnable;
 		synchronized(modules) {
 			toEnable = ImmutableList.copyOf(modules.values());
 		}
 		
+		ArrayList<ListenableFuture<Void>> futures = new ArrayList<>();
+		
 		for(BaseModuleMetadata meta : toEnable) {
-			enableModule(meta);
+			ListenableFuture<Void> future = enableModule(meta);
+			futures.add(future);
 		}
 		
+		return Futures.whenAllComplete(futures).call(()->null, MoreExecutors.directExecutor());
 	}
 }
