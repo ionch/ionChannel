@@ -16,21 +16,32 @@
 
 package social.ionch.api;
 
+import java.io.CharConversionException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.glassfish.grizzly.http.server.Request;
+import org.glassfish.grizzly.http.server.Response;
+import org.glassfish.grizzly.http.util.HttpStatus;
+
 import social.ionch.api.db.Database;
 import social.ionch.api.module.ModuleLoader;
+import social.ionch.api.rest.OAuthRestHandler;
+import social.ionch.api.rest.RestHandler;
 import social.ionch.api.text.RenderableText;
 import social.ionch.api.text.TextRenderer;
 
 public class Ionch {
 	private static ArrayList<Database> databases = new ArrayList<>();
 	private static Database defaultDatabase;
-	private static HashMap<String, TextRenderer> renderers = new HashMap<>();
+	private static Map<String, TextRenderer> renderers = new HashMap<>();
+	private static List<RestHandler> restHandlers = new ArrayList<>();
+	
 	private static ModuleLoader moduleLoader;
 	
 	@Nonnull
@@ -50,6 +61,23 @@ public class Ionch {
 		return true;
 	}
 	
+	public static boolean handle(Request request, Response response) {
+		String resource;
+		try {
+			resource = request.getDecodedRequestURI();
+		} catch (CharConversionException e) {
+			 //Throw a 400 Bad Request because the URI uses invalid characters
+			response.setStatus(HttpStatus.BAD_REQUEST_400);
+			response.setError();
+			return true;
+		}
+		for(RestHandler handler : restHandlers) {
+			if (handler.matches(resource) && handler.handle(resource, request, response)) return true;
+		}
+		
+		return false;
+	}
+	
 	public static void registerDatabase(Database database) {
 		if (databases.contains(database)) return;
 		databases.add(database);
@@ -63,5 +91,9 @@ public class Ionch {
 	/** WILL OVERWRITE THE DEFAULT MODULE LOADER! For internal use only. */
 	public static void registerModuleLoader(ModuleLoader loader) {
 		moduleLoader = loader;
+	}
+
+	public static void registerRestHandler(OAuthRestHandler handler) {
+		restHandlers.add(handler);
 	}
 }
