@@ -16,19 +16,23 @@
 
 package social.ionch.core;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.HostnameVerifier;
@@ -52,6 +56,11 @@ import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import blue.endless.jankson.Jankson;
+import blue.endless.jankson.JsonElement;
+import blue.endless.jankson.JsonGrammar;
+import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.impl.SyntaxError;
 import social.ionch.api.Ionch;
 import social.ionch.builtin.activitypub.ActivityPubModule;
 import social.ionch.builtin.db.DatabaseModule;
@@ -65,15 +74,77 @@ public class IonChannel {
 	public static final String SLUG = "Radically Inclusive Jean Technology";
 	public static final String INSTANCE_NAME = "Prime";
 	public static final String SERVER_HEADER = NAME+" "+VERSION+" ("+SLUG+")";
-	public static final String CLACKS = "Natalie Nguyen, Shiina Mota, Natalie Nguyen, Shiina Mota";
+	private static String CLACKS = "Natalie Nguyen, Shiina Mota";
+	
+	public static ServerSettings SERVER_SETTINGS = new ServerSettings();
 	
 	public static final Logger LOG = LoggerFactory.getLogger("IonChannel");
 	
 	private static BaseModuleLoader LOADER = new BaseModuleLoader();
 	
 	public static void main(String[] args) {
+		Jankson jankson = Jankson.builder().build();
 		
-		Ionch.registerModuleLoader(LOADER);
+		//TODO: Group and parse args
+		
+		//TODO: Figure out what our base directory is and load global settings.
+		
+		//For now, our base directory is "./", and our settings is "./settings.json5"
+		File settingsFile = new File("settings.json5");
+		
+		if (settingsFile.exists()) {
+			try {
+				JsonObject defaultSettings = (JsonObject)jankson.toJson(SERVER_SETTINGS); //Shouldn't break unless SERVER_SETTINGS gets set to an Integer or something
+				JsonObject loadedSettings = jankson.load(settingsFile);
+				boolean changed = false;
+				
+				//Remove obsolete keys to prevent confusion
+				Set<String> toRemove = new HashSet<String>();
+				for(String key : loadedSettings.keySet()) {
+					if (!defaultSettings.containsKey(key)) {
+						toRemove.add(key);
+						changed = true;
+					}
+				}
+				for(String s : toRemove) loadedSettings.remove(s);
+				
+				//Load in new keys
+				for(Map.Entry<String, JsonElement> element : defaultSettings.entrySet()) {
+					if (!loadedSettings.containsKey(element.getKey())) {
+						loadedSettings.putDefault(element.getKey(), element.getValue(), defaultSettings.getComment(element.getKey())); //TODO: Find a way to not hack this
+						changed = true;
+					}
+				}
+				
+				//Write the file back to disk if something changed
+				if (changed) {
+					String toWrite = loadedSettings.toJson(JsonGrammar.JSON5);
+					try (OutputStream out = new FileOutputStream(settingsFile)) {
+						out.write(toWrite.getBytes(StandardCharsets.UTF_8));
+					}
+				}
+				
+				SERVER_SETTINGS = jankson.fromJson(loadedSettings, ServerSettings.class);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (SyntaxError e) {
+				e.printStackTrace();
+			}
+		} else {
+			//Write out a fresh config to give users a hint for what they can modify
+			String toWrite = jankson.toJson(SERVER_SETTINGS).toJson(JsonGrammar.JSON5);
+			try (OutputStream out = new FileOutputStream(settingsFile)) {
+				out.write(toWrite.getBytes(StandardCharsets.UTF_8));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		if (SERVER_SETTINGS.additional_clacks.length>0) {
+			for(String s : SERVER_SETTINGS.additional_clacks) CLACKS += ", "+s;
+		}
+		
+		//Ionch.registerModuleLoader(LOADER);
 		ListenableFuture<Void> enabled = loadBuiltins();
 		
 		enabled.addListener(()->{

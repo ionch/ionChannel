@@ -3,6 +3,7 @@ package social.ionch.builtin.activitypub;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import social.ionch.api.Ionch;
 import social.ionch.api.module.Module;
 import social.ionch.api.module.ModuleMetadata;
 
@@ -16,6 +17,8 @@ public class ActivityPubModule implements Module {
 
 	@Override
 	public ListenableFuture<Void> enable(ModuleMetadata metadata) {
+		Ionch.registerRestHandler(new WellKnownRestHandler());
+		
 		return Futures.immediateFuture(null);
 	}
 

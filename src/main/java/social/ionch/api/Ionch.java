@@ -31,10 +31,10 @@ import org.glassfish.grizzly.http.util.HttpStatus;
 
 import social.ionch.api.db.Database;
 import social.ionch.api.module.ModuleLoader;
-import social.ionch.api.rest.OAuthRestHandler;
 import social.ionch.api.rest.RestHandler;
 import social.ionch.api.text.RenderableText;
 import social.ionch.api.text.TextRenderer;
+import social.ionch.core.module.BaseModuleLoader;
 
 public class Ionch {
 	private static ArrayList<Database> databases = new ArrayList<>();
@@ -42,7 +42,7 @@ public class Ionch {
 	private static Map<String, TextRenderer> renderers = new HashMap<>();
 	private static List<RestHandler> restHandlers = new ArrayList<>();
 	
-	private static ModuleLoader moduleLoader;
+	private static ModuleLoader moduleLoader = new BaseModuleLoader();
 	
 	@Nonnull
 	public static Database getDatabase() {
@@ -89,11 +89,11 @@ public class Ionch {
 	}
 	
 	/** WILL OVERWRITE THE DEFAULT MODULE LOADER! For internal use only. */
-	public static void registerModuleLoader(ModuleLoader loader) {
-		moduleLoader = loader;
-	}
+	//public static void registerModuleLoader(ModuleLoader loader) {
+	//	moduleLoader = loader;
+	//}
 
-	public static void registerRestHandler(OAuthRestHandler handler) {
+	public static void registerRestHandler(RestHandler handler) {
 		restHandlers.add(handler);
 	}
 }
