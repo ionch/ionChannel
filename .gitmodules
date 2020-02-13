@@ -1,0 +1,3 @@
+[submodule "third-party/Jankson"]
+	path = third-party/Jankson
+	url = https://github.com/falkreon/Jankson.git

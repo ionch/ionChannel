@@ -1,0 +1,51 @@
+plugins {
+	id 'java'
+	id 'eclipse'
+	id 'net.minecrell.licenser' version '0.4.1'
+	id 'com.github.johnrengelman.shadow' version '5.2.0'
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		url "https://repo.unascribed.com"
+	}
+}
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+dependencies {
+	implementation project(':Jankson')
+
+	implementation 'com.google.guava:guava:28.2-jre'
+	implementation 'com.playsawdust:toolbox:2.1.1'
+	
+	implementation 'org.slf4j:slf4j-api:1.7.9'
+	implementation 'com.unascribed:asyncsimplelog:4.6.0'
+	implementation 'org.slf4j:log4j-over-slf4j:1.7.9'
+	implementation 'org.slf4j:jul-to-slf4j:1.7.9'
+	implementation 'org.slf4j:jcl-over-slf4j:1.7.9'
+
+	implementation 'org.eclipse.jetty:jetty-server:9.4.24.v20191120'
+	
+	implementation 'org.jline:jline-terminal:3.13.3'
+	implementation 'org.jline:jline-reader:3.13.3'
+	implementation 'org.jline:jline-terminal-jansi:3.13.3'
+	
+	implementation 'com.h2database:h2:1.4.200'
+	
+	implementation 'com.github.spullara.mustache.java:compiler:0.9.6'
+}
+
+license {
+	header = file('HEADER')
+	
+	include '**/*.java'
+}
+
+shadowJar {
+	manifest {
+		attributes 'Main-Class': 'social.ionch.Bootstrap'
+	}
+}

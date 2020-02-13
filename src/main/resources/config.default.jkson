@@ -1,0 +1,101 @@
+/* This is a Jankson file.
+   
+   Jankson is a JSON parser that supports a variety of "quirks" to make writing JSON files more
+   forgiving. The .jkson file extension is used to represent every quirk being enabled. Other common
+   file extensions used for Jankson-read files are .json5 and .hjson, to represent different subsets
+   of quirks being enabled.
+   
+   A .jkson file, therefore, differs from a .json file in the following ways:
+   - Comments are permitted, and persisted through file rewrites (with some limitations)
+   - Commas are always optional
+   - Keys do not need to be quoted
+   - The braces for the root object may be omitted
+   - Infinity, -Infinity, and NaN may be used as bare keywords instead of strings
+*/
+server: {
+	// Options for exposing ionChannel over unencrypted HTTP/1.1.
+	http1: {
+		enabled: true
+		/* What address to bind to. 0.0.0.0 means "all IPv4 addresses".
+		   It is recommended you bind ionChannel to localhost and some arbitrary high port, and run
+		   it behind a reverse proxy server.
+		*/
+		bind: "0.0.0.0"
+		/* What port to bind to. Well-known ports (< 1024) require root access, or on Linux the
+		   CAP_NET_BIND_SERVICE capability.
+		*/
+		port: 3080
+		/* Where ionChannel should serve itself from. Useful for reverse proxying in a subdirectory
+		   without URL mangling.
+		*/
+		root: "/"
+	}
+	/* Options for exposing ionChannel over HTTP/2 with SSL, for running ionChannel raw without a
+	   reverse proxy in front.
+	*/
+	http2: {
+		enabled: false
+		/* What address to bind to.
+		   "0.0.0.0" means "all IPv4 addresses", "::" means "all IPv6 addresses", and the special
+		   token "*" means "all IPv4 and IPv6 addresses" - this is explicitly supported by ionChannel
+		   and is nonstandard.
+		*/
+		bind: "0.0.0.0"
+		/* What port to bind to. Well-known ports (< 1024) require root access, or on Linux the
+		   CAP_NET_BIND_SERVICE capability.
+		*/
+		port: 3443
+		/* Where ionChannel should serve itself from. Useful for reverse proxying in a subdirectory
+		   without URL mangling.
+		*/
+		root: "/"
+		// The path to the certificate for ionch to use. HTTP/2 requires SSL.
+		sslCertificate: "fullchain.pem"
+		sslCertificateKey: "privkey.pem"
+	}
+	/* Options for exposing ionChannel over FastCGI, to reduce overhead when using a reverse proxy
+	   server such as nginx. Advanced. Generally you should use HTTP/1.1 for simplicity - it's not
+	   that much less efficient.
+	*/
+	fcgi: {
+		enabled: false
+		socket: "/tmp/ionch/fastcgi.sock"
+		root: "/"
+	}
+}
+database: {
+	// Which backend to use. Your choices can be seen below.
+	backend: "h2"
+	/* If set to a backend name instead of "none", all data from the given backend will be loaded when
+	   ionChannel starts and copied into the backend specified above. For example, if you set
+	   migrateFrom to "h2" and backend to "mysql", you can migrate all your data from H2SQL to MySQL.
+	   Once a migration has been completed, migrateFrom will be set back to "none".
+	*/
+	migrateFrom: "none"
+	/* Options for using the H2SQL database backend. H2SQL is a fast pure Java SQL database comparable
+	   to SQLite. It is ionChannel's default backend, and the recommended one for most users. H2SQL
+	   provides perfectly acceptable performance for small to medium instances, and makes administration
+	   very easy - H2 works out-of-the-box and doesn't require setting up and managing a separate
+	   database server.
+	*/
+	h2: {
+		// Must end in .mv.db
+		file: "ionch.mv.db"
+		/* The maximum frequency at which ionChannel will persist to the file on disk, in seconds.
+		   Higher values cause more data loss in the event of a crash but increase performance and
+		   can reduce wear on eMMC storage. If set to 0, this will be decided automatically based on
+		   the amount of buffered data. 0 is the recommended option.
+		*/
+		writeFrequency: 0
+	}
+	/* Options for using the MySQL/MariaDB database backend. This is the recommended database backend
+	   if you want to use a database server.
+	*/
+	mysql: {
+		// Can also be set to a path to use a socket instead.
+		host: "localhost:3306"
+		database: "ionch"
+		user: "ionch"
+		password: "i0nch!"
+	}
+}

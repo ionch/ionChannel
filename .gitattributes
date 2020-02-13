@@ -1,0 +1,9 @@
+*.jkson text linguist-language=JavaScript -linguist-detectable
+
+*.java text diff=java
+*.gradle text diff=java
+
+*.html text diff=html
+*.html.hbs text diff=html
+
+*.css text diff=css
