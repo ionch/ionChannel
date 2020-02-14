@@ -14,36 +14,20 @@
  * along with ionChannel.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package social.ionch.builtin;
+package social.ionch.api;
 
-import social.ionch.api.db.DatabaseFactory;
-import social.ionch.api.db.DatabaseFactoryRegistry;
+import social.ionch.api.plugin.Plugin;
 
-public abstract class BuiltInTrivialDatabasePlugin extends BuiltInPlugin implements DatabaseFactory {
+/**
+ * Standard virtual plugin IDs for use in {@link Plugin#provides} and related methods.
+ */
+public final class StandardVirtuals {
 
-	@Override
-	public final void enable() {
-		DatabaseFactoryRegistry.register(this);
-	}
-
-	@Override
-	public final void hotDisable() throws UnsupportedOperationException {
-		DatabaseFactoryRegistry.unregister(this);
-	}
+	/**
+	 * Provided by plugins that contain a database implementation.
+	 */
+	public static final String DATABASE = "?social.ionch.db";
 	
-	@Override
-	public final boolean canHotDisable() {
-		return true;
-	}
-
-	@Override
-	public final void init() {
-		// nothing to do
-	}
-	
-	@Override
-	public final void shutdown() {
-		
-	}
+	private StandardVirtuals() {}
 	
 }

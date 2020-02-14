@@ -21,4 +21,19 @@ package social.ionch.api.db;
  */
 public interface Database {
 
+	/**
+	 * Deallocate any resources used by this Database instance. Close connections, abort unfinished
+	 * transactions, close files, purge caches, etc. Normally called when this Database instance is
+	 * the active one and the server is shutting down, but may be called any other time.
+	 */
+	void destroy();
+	
+	/**
+	 * Retrieve a URI that represents this Database in some way. It will not be used to reconstruct
+	 * new Database instances and is purely informational. If this Database is backed by JDBC, then
+	 * you may just return the JDBC URL here.
+	 * @return a URI that represents this Database
+	 */
+	String getUri();
+	
 }

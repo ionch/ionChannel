@@ -17,12 +17,11 @@
 package social.ionch.api.db;
 
 import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import com.google.common.collect.Maps;
 
 import blue.endless.jankson.JsonObject;
+import social.ionch.api.ResourcefulReadWriteLock;
+import social.ionch.api.ResourcefulReadWriteLock.HeldLock;
 
 public final class DatabaseFactoryRegistry {
 
@@ -62,7 +61,7 @@ public final class DatabaseFactoryRegistry {
 
 	}
 
-	private static final ReadWriteLock rwl = new ReentrantReadWriteLock();
+	private static final ResourcefulReadWriteLock rwl = ResourcefulReadWriteLock.create();
 	private static final Map<String, DatabaseFactory> registry = Maps.newHashMap();
 	private static final Map<String, DatabaseFactoryFacsimile> facsimilies = Maps.newHashMap();
 	
@@ -75,13 +74,10 @@ public final class DatabaseFactoryRegistry {
 	 */
 	public static DatabaseFactory get(String name) {
 		if (name == null) throw new IllegalArgumentException("Cannot get null");
-		try {
-			rwl.readLock().lock();
+		try (HeldLock hl = rwl.obtainReadLock()) {
 			if (!registry.containsKey(name))
 				throw new IllegalArgumentException("No database factory with name \""+name+"\" has been registered");
 			return facsimilies.get(name);
-		} finally {
-			rwl.readLock().unlock();
 		}
 	}
 	
@@ -92,19 +88,11 @@ public final class DatabaseFactoryRegistry {
 	public static void register(DatabaseFactory df) {
 		if (df == null) throw new IllegalArgumentException("Cannot register null");
 		String name = df.name();
-		try {
-			rwl.readLock().lock();
+		try (HeldLock hl = rwl.obtainWriteLock()) {
 			if (registry.containsKey(name))
 				throw new IllegalStateException("A database factory with name \""+name+"\" is already registered");
-		} finally {
-			rwl.readLock().unlock();
-		}
-		try {
-			rwl.writeLock().lock();
 			registry.put(name, df);
 			facsimilies.put(name, new DatabaseFactoryFacsimile(df));
-		} finally {
-			rwl.writeLock().unlock();
 		}
 	}
 	
@@ -117,8 +105,7 @@ public final class DatabaseFactoryRegistry {
 	public static void unregister(DatabaseFactory df) {
 		if (df == null) throw new IllegalArgumentException("Cannot unregister null");
 		String name = df.name();
-		try {
-			rwl.readLock().lock();
+		try (HeldLock hl = rwl.obtainWriteLock()) {
 			if (!registry.containsKey(name))
 				throw new IllegalArgumentException("No database factory with name \""+name+"\" has been registered");
 			if (df != registry.get(name)) {
@@ -127,16 +114,9 @@ public final class DatabaseFactoryRegistry {
 				}
 				throw new IllegalArgumentException("The passed database factory is not the same object as the registered database factory");
 			}
-		} finally {
-			rwl.readLock().unlock();
-		}
-		try {
-			rwl.writeLock().lock();
 			if (registry.remove(name, df)) {
 				facsimilies.remove(name);
 			}
-		} finally {
-			rwl.writeLock().unlock();
 		}
 	}
 	

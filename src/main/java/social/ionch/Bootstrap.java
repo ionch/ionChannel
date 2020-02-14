@@ -16,7 +16,6 @@
 
 package social.ionch;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -28,26 +27,15 @@ import com.unascribed.asyncsimplelog.AsyncSimpleLog;
 
 import com.playsawdust.chipper.toolbox.io.LoggerPrintStream;
 
-import blue.endless.jankson.JsonGrammar;
+import social.ionch.api.JsonObjectBuilder;
 import social.ionch.api.Version;
+import social.ionch.api.config.ConfigHandler;
 import social.ionch.api.plugin.PluginManager;
 import social.ionch.builtin.H2DatabasePlugin;
 
 public class Bootstrap {
 	private static final Logger log = LoggerFactory.getLogger(Bootstrap.class);
 	
-	/**
-	 * A JsonGrammar with every Jankson quirk enabled, including bareRootObject.
-	 */
-	public static final JsonGrammar JKSON = JsonGrammar.builder()
-			.bareRootObject(true)
-			.bareSpecialNumerics(true)
-			.printCommas(false)
-			.printUnquotedKeys(true)
-			.printWhitespace(true)
-			.withComments(true)
-			.build();
-
 	public static void main(String[] args) throws IOException {
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
@@ -55,16 +43,16 @@ public class Bootstrap {
 		AsyncSimpleLog.ban(Pattern.compile("org.jline", Pattern.LITERAL));
 		AsyncSimpleLog.startLogging();
 		
-		File configFile = new File("ionch.jkson");
-		if (!configFile.exists()) {
-			
-			log.error("ionch.jkson does not exist. A default config has been written.");
-		}
-		
 		LoggerPrintStream.initializeDefault();
 		log.info("{} starting up", Version.FULLER);
 		
-		PluginManager.addBuiltInPlugin(new H2DatabasePlugin());
+		ConfigHandler.contributeSection("db", new JsonObjectBuilder()
+				.put("backend", "h2")
+				.build());
+		
+		PluginManager.addPlugin(new H2DatabasePlugin());
+		
+		
 	}
 
 }

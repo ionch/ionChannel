@@ -1,2 +1,0 @@
-include "Jankson"
-project(":Jankson").projectDir = file("third-party/Jankson")

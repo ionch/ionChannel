@@ -16,31 +16,122 @@
 
 package social.ionch.api.plugin;
 
-/**
- * Base interface for an ionChannel plugin. Provides a barebones lifecycle.
- */
-public interface Plugin {
+import com.google.common.collect.ImmutableSet;
 
+/**
+ * Base class for an ionChannel plugin. Provides a barebones lifecycle.
+ */
+public abstract class Plugin {
+
+	private String id;
+	private ImmutableSet<String> provides = ImmutableSet.of();
+	private ImmutableSet<String> conflicts = ImmutableSet.of();
+	private ImmutableSet<String> needs = ImmutableSet.of();
+	private ImmutableSet<String> wants = ImmutableSet.of();
+	
+	/**
+	 * Set this plugin's ID. Must be called in the constructor. Should be like a Java package name
+	 * to avoid conflicts, such as "social.ionch.h2". Cannot start with a ? - IDs starting with a
+	 * question mark are virtual and may only be used with provides.
+	 */
+	protected final void id(String id) {
+		if (this.id != null) throw new IllegalStateException("ID is already set");
+		if (id.startsWith("?")) throw new IllegalArgumentException("A plugin's ID cannot be virtual");
+		this.id = id;
+	}
+	/**
+	 * Set this plugin's provides list - these are the plugin IDs this plugin should additionally
+	 * count as for dependencies. Generally, these should be virtual plugin IDs, which only differ
+	 * from normal plugin IDs in that they do not represent any extant plugin. For additional
+	 * differentiation, virtual plugin IDs should start with a question mark ("?"). Can be called in
+	 * the constructor.
+	 */
+	protected final void provides(String... provides) {
+		if (!this.provides.isEmpty()) throw new IllegalStateException("Provides already set");
+		this.provides = ImmutableSet.copyOf(provides);
+	}
+	/**
+	 * Set this plugin's conflicts list - plugin IDs that, if enabled, prevent this plugin from
+	 * being enabled. It is legal for a plugin to conflict with a plugin ID that it provides; this
+	 * makes the plugin mutually exclusive with other plugins providing the same ID. Can be called
+	 * in the constructor.
+	 */
+	protected final void conflicts(String... conflicts) {
+		if (!this.conflicts.isEmpty()) throw new IllegalStateException("Conflicts already set");
+		this.conflicts = ImmutableSet.copyOf(conflicts);
+	}
+	/**
+	 * Set this plugin's needs list - plugin IDs that must be enabled for this plugin to be
+	 * enabled. Can be called in the constructor.
+	 */
+	protected final void needs(String... needs) {
+		if (!this.needs.isEmpty()) throw new IllegalStateException("Needs already set");
+		this.needs = ImmutableSet.copyOf(needs);
+	}
+	/**
+	 * Set this plugin's wants list - plugin IDs that, if present, must be enabled before this
+	 * plugin. Can be called in the constructor.
+	 */
+	protected final void wants(String... wants) {
+		if (!this.wants.isEmpty()) throw new IllegalStateException("Wants already set");
+		this.wants = ImmutableSet.copyOf(wants);
+	}
+	
+	/**
+	 * @return this plugin's ID - should be formatted like a Java package name
+	 */
+	public final String getId() {
+		return id;
+	}
+	/**
+	 * @return this plugin's provides list - the plugin IDs this plugin should additionally count as
+	 * 		for dependencies
+	 */
+	public final ImmutableSet<String> getProvides() {
+		return provides;
+	}
+	/**
+	 * @return this plugin's conflicts list - plugin IDs that, if enabled, prevent this plugin from
+	 * 		being enabled
+	 */
+	public final ImmutableSet<String> getConflicts() {
+		return conflicts;
+	}
+	/**
+	 * @return this plugin's needs list - plugin IDs that must be enabled for this plugin to be
+	 * 		enabled
+	 */
+	public final ImmutableSet<String> getNeeds() {
+		return needs;
+	}
+	/**
+	 * @return this plugin's wants list - plugin IDs that, if present, must be enabled before this
+	 * 		plugin
+	 */
+	public final ImmutableSet<String> getWants() {
+		return wants;
+	}
+	
 	/**
 	 * Called when this plugin is being enabled. This could be because an admin has chosen to enable
 	 * it in the control panel, or because the plugin is enabled in the config and the server is
 	 * starting. Perform early initialization and registration here. Be aware of the fact this may
 	 * be called during early init, or after the server is completely started.
 	 */
-	void enable();
+	public abstract void enable();
 	/**
 	 * Called when this plugin is being hot-disabled, as an admin has chosen to disable it in the
 	 * control panel. Unregister anything that has been registered and tear down any resources here.
 	 * @throws UnsupportedOperationException if this plugin {@link #canHotDisable cannot be hot-disabled}
 	 */
-	void hotDisable() throws UnsupportedOperationException;
+	public abstract void hotDisable() throws UnsupportedOperationException;
 	
 	/**
 	 * Some plugins, for some reason, may not be hot-disabled. If this is the case, you may return
 	 * false from this method.
 	 * @return {@code true} if this plugin can be hot-disabled
 	 */
-	default boolean canHotDisable() { return true; }
+	public boolean canHotDisable() { return true; }
 	
 	/**
 	 * Called when the server is ready for this plugin to perform late-initialization tasks. When
@@ -48,12 +139,14 @@ public interface Plugin {
 	 * already done starting when this plugin was {@link #enable enabled}, this will be called
 	 * immediately.
 	 */
-	void init();
+	public abstract void init();
 	/**
 	 * Called when the server is performing an orderly shutdown. When this is called, the database,
 	 * server, etc, are all still available. Blocking in this method will delay shutdown; do as
 	 * little work here as possible. Few plugins will need to perform any cleanup in this method.
 	 */
-	default void shutdown() {}
+	public void shutdown() {}
+	
+	
 	
 }

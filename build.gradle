@@ -7,25 +7,25 @@ plugins {
 
 repositories {
 	mavenCentral()
-	maven {
-		url "https://repo.unascribed.com"
-	}
+	maven { url "https://repo.unascribed.com" }
+	maven { url "https://repo.elytradev.com" }
 }
 
 sourceCompatibility = 11
 targetCompatibility = 11
 
 dependencies {
-	implementation project(':Jankson')
-
 	implementation 'com.google.guava:guava:28.2-jre'
-	implementation 'com.playsawdust:toolbox:2.1.1'
+	implementation 'com.playsawdust:toolbox:2.1.2'
+	implementation 'blue.endless:jankson:1.2.0-78'
 	
 	implementation 'org.slf4j:slf4j-api:1.7.9'
 	implementation 'com.unascribed:asyncsimplelog:4.6.0'
 	implementation 'org.slf4j:log4j-over-slf4j:1.7.9'
 	implementation 'org.slf4j:jul-to-slf4j:1.7.9'
 	implementation 'org.slf4j:jcl-over-slf4j:1.7.9'
+
+	implementation 'org.apache.jclouds:jclouds-allblobstore:2.1.2'
 
 	implementation 'org.eclipse.jetty:jetty-server:9.4.24.v20191120'
 	

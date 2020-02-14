@@ -18,7 +18,7 @@ package social.ionch.builtin;
 
 import social.ionch.api.plugin.Plugin;
 
-public abstract class BuiltInPlugin implements Plugin {
+public abstract class BuiltInPlugin extends Plugin {
 
 	/*package*/ BuiltInPlugin() {}
 	

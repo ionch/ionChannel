@@ -16,7 +16,11 @@ server: {
 	// Options for exposing ionChannel over unencrypted HTTP/1.1.
 	http1: {
 		enabled: true
-		/* What address to bind to. 0.0.0.0 means "all IPv4 addresses".
+		/* What address to bind to.
+		   "0.0.0.0" means "all IPv4 addresses", "::" means "all IPv6 addresses", and the special
+		   token "*" means "all IPv4 and IPv6 addresses" - this is explicitly supported by ionChannel
+		   and is nonstandard.
+		   
 		   It is recommended you bind ionChannel to localhost and some arbitrary high port, and run
 		   it behind a reverse proxy server.
 		*/
@@ -45,9 +49,7 @@ server: {
 		   CAP_NET_BIND_SERVICE capability.
 		*/
 		port: 3443
-		/* Where ionChannel should serve itself from. Useful for reverse proxying in a subdirectory
-		   without URL mangling.
-		*/
+		// Where ionChannel should serve itself from.
 		root: "/"
 		// The path to the certificate for ionch to use. HTTP/2 requires SSL.
 		sslCertificate: "fullchain.pem"
