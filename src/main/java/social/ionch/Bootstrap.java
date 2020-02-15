@@ -28,6 +28,9 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.unascribed.asyncsimplelog.AsyncSimpleLog;
+
+import com.google.common.base.Stopwatch;
+
 import com.playsawdust.chipper.toolbox.io.LoggerPrintStream;
 
 import blue.endless.jankson.JsonArray;
@@ -107,6 +110,7 @@ public class Bootstrap {
 			System.exit(4);
 			return;
 		}
+		Stopwatch sw = Stopwatch.createStarted();
 		for (Plugin p : resolved) {
 			if (p.canHotDisable()) {
 				try {
@@ -136,13 +140,28 @@ public class Bootstrap {
 					log.debug("Plugin {} passed cleanliness check", p.getId());
 				}
 			}
-			log.info("Enabling {}", p.toFriendlyString());
+			log.debug("Enabling {}", p.toFriendlyString());
 			try {
 				p.enable();
 			} catch (Throwable t) {
 				log.error("Plugin {} threw an exception during enable", p.getId(), t);
+				System.exit(5);
+				return;
 			}
 		}
+		log.info("Enabled {} plugins in {}", resolved.size(), sw);
+		sw.reset().start();
+		for (Plugin p : resolved) {
+			log.debug("Initializing {}", p.toFriendlyString());
+			try {
+				p.init();
+			} catch (Throwable t) {
+				log.error("Plugin {} threw an exception during init", p.getId(), t);
+				System.exit(6);
+				return;
+			}
+		}
+		log.info("Initialized {} plugins in {}", resolved.size(), sw);
 		try {
 			ConfigSectionHandler.write(cfgFile, cfg);
 		} catch (IOException e) {
