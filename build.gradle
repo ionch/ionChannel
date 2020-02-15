@@ -25,13 +25,14 @@ dependencies {
 	implementation 'org.slf4j:jul-to-slf4j:1.7.9'
 	implementation 'org.slf4j:jcl-over-slf4j:1.7.9'
 
-	implementation 'org.apache.jclouds:jclouds-allblobstore:2.1.2'
-
 	implementation 'org.eclipse.jetty:jetty-server:9.4.24.v20191120'
 	
 	implementation 'org.jline:jline-terminal:3.13.3'
 	implementation 'org.jline:jline-reader:3.13.3'
 	implementation 'org.jline:jline-terminal-jansi:3.13.3'
+	
+	implementation 'org.ow2.asm:asm:7.0-beta'
+	implementation 'org.ow2.asm:asm-tree:7.0-beta'
 	
 	implementation 'com.h2database:h2:1.4.200'
 	

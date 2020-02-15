@@ -17,9 +17,11 @@
 package social.ionch.api.db;
 
 import java.util.Map;
+
 import com.google.common.collect.Maps;
 
 import blue.endless.jankson.JsonObject;
+import social.ionch.SkeletonKey;
 import social.ionch.api.ResourcefulReadWriteLock;
 import social.ionch.api.ResourcefulReadWriteLock.HeldLock;
 
@@ -65,6 +67,10 @@ public final class DatabaseFactoryRegistry {
 	private static final Map<String, DatabaseFactory> registry = Maps.newHashMap();
 	private static final Map<String, DatabaseFactoryFacsimile> facsimilies = Maps.newHashMap();
 	
+	private static Map<String, DatabaseFactory> savedRegistry = null;
+	private static Map<String, DatabaseFactoryFacsimile> savedFacsimilies = null;
+	private static boolean savedStateCopied = false;
+	
 	/**
 	 * Retrieve a facsimile of the DatabaseFactory with the given name. The facsimile opaquely
 	 * wraps the implementation, preventing casting or undue unregistration.
@@ -91,6 +97,7 @@ public final class DatabaseFactoryRegistry {
 		try (HeldLock hl = rwl.obtainWriteLock()) {
 			if (registry.containsKey(name))
 				throw new IllegalStateException("A database factory with name \""+name+"\" is already registered");
+			copySavedStateIfNeeded();
 			registry.put(name, df);
 			facsimilies.put(name, new DatabaseFactoryFacsimile(df));
 		}
@@ -114,9 +121,49 @@ public final class DatabaseFactoryRegistry {
 				}
 				throw new IllegalArgumentException("The passed database factory is not the same object as the registered database factory");
 			}
+			copySavedStateIfNeeded();
 			if (registry.remove(name, df)) {
 				facsimilies.remove(name);
 			}
+		}
+	}
+	
+	private static void copySavedStateIfNeeded() {
+		if (savedRegistry != null && !savedStateCopied) {
+			savedRegistry = Maps.newHashMap(savedRegistry);
+			savedFacsimilies = Maps.newHashMap(savedFacsimilies);
+			savedStateCopied = true;
+		}
+	}
+	
+	/**
+	 * Internal use only.
+	 */
+	public static void $$_saveState(SkeletonKey key) {
+		SkeletonKey.verify(key);
+		try (HeldLock hl = rwl.obtainWriteLock()) {
+			savedRegistry = registry;
+			savedFacsimilies = facsimilies;
+			savedStateCopied = false;
+		}
+	}
+
+	/**
+	 * Internal use only.
+	 */
+	public static boolean $$_restoreState(SkeletonKey key) {
+		SkeletonKey.verify(key);
+		try (HeldLock hl = rwl.obtainWriteLock()) {
+			boolean rtrn = registry.equals(savedRegistry) && facsimilies.equals(savedFacsimilies);
+			if (savedStateCopied) {
+				registry.clear();
+				facsimilies.clear();
+				registry.putAll(savedRegistry);
+				facsimilies.putAll(savedFacsimilies);
+			}
+			savedRegistry = null;
+			savedFacsimilies = null;
+			return rtrn;
 		}
 	}
 	

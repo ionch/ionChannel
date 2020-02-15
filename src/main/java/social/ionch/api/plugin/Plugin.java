@@ -16,7 +16,12 @@
 
 package social.ionch.api.plugin;
 
+import javax.annotation.Nullable;
+
 import com.google.common.collect.ImmutableSet;
+
+import social.ionch.SkeletonKey;
+import social.ionch.builtin.BuiltInPlugin;
 
 /**
  * Base class for an ionChannel plugin. Provides a barebones lifecycle.
@@ -24,10 +29,14 @@ import com.google.common.collect.ImmutableSet;
 public abstract class Plugin {
 
 	private String id;
+	private String name;
+	private String author;
 	private ImmutableSet<String> provides = ImmutableSet.of();
 	private ImmutableSet<String> conflicts = ImmutableSet.of();
 	private ImmutableSet<String> needs = ImmutableSet.of();
 	private ImmutableSet<String> wants = ImmutableSet.of();
+	
+	private boolean unclean;
 	
 	/**
 	 * Set this plugin's ID. Must be called in the constructor. Should be like a Java package name
@@ -38,6 +47,21 @@ public abstract class Plugin {
 		if (this.id != null) throw new IllegalStateException("ID is already set");
 		if (id.startsWith("?")) throw new IllegalArgumentException("A plugin's ID cannot be virtual");
 		this.id = id;
+	}
+	/**
+	 * Set this plugin's user-friendly name. If not set, defaults to the plugin ID. Can be called in
+	 * the constructor.
+	 */
+	protected final void name(String name) {
+		if (this.name != null) throw new IllegalStateException("Name is already set");
+		this.name = name;
+	}
+	/**
+	 * Set this plugin's author. Can be called in the constructor.
+	 */
+	protected final void author(String author) {
+		if (this.author != null) throw new IllegalStateException("Author is already set");
+		this.author = author;
 	}
 	/**
 	 * Set this plugin's provides list - these are the plugin IDs this plugin should additionally
@@ -82,6 +106,30 @@ public abstract class Plugin {
 	 */
 	public final String getId() {
 		return id;
+	}
+	/**
+	 * @return this plugin's user-friendly name, or its ID if it doesn't have one
+	 */
+	public final String getName() {
+		return name == null ? id : name;
+	}
+	/**
+	 * @return {@code true} if this plugin has a user-friendly name
+	 */
+	public final boolean hasName() {
+		return name != null;
+	}
+	/**
+	 * @return this plugin's author, or null if not set
+	 */
+	public @Nullable String getAuthor() {
+		return author;
+	}
+	/**
+	 * @return {@code true} if this plugin has an author
+	 */
+	public final boolean hasAuthor() {
+		return author != null;
 	}
 	/**
 	 * @return this plugin's provides list - the plugin IDs this plugin should additionally count as
@@ -134,6 +182,16 @@ public abstract class Plugin {
 	public boolean canHotDisable() { return true; }
 	
 	/**
+	 * Upon plugin load, ionChannel performs a short cleanliness check if {@link #canHotDisable()}
+	 * returns true to ensure basic consistency between enable/disable. If this check fails, this
+	 * method will return {@code true}.
+	 * @return {@code true} if this plugin failed the cleanliness check
+	 */
+	public final boolean isUnclean() {
+		return unclean;
+	}
+	
+	/**
 	 * Called when the server is ready for this plugin to perform late-initialization tasks. When
 	 * this is called, the database is ready, the server is listening, etc. If the server was
 	 * already done starting when this plugin was {@link #enable enabled}, this will be called
@@ -147,6 +205,31 @@ public abstract class Plugin {
 	 */
 	public void shutdown() {}
 	
+	/**
+	 * @return a string representing this plugin, in form "Name (ID) by Author", omitting missing
+	 * 		information
+	 */
+	public final String toFriendlyString() {
+		String s;
+		if (hasName()) {
+			s = getName()+" ("+getId()+")";
+		} else {
+			s = getId();
+		}
+		if (this instanceof BuiltInPlugin) {
+			s = s+" [Built-in]";
+		} else if (hasAuthor()) {
+			s = s+" by "+getAuthor();
+		}
+		return s;
+	}
 	
+	/**
+	 * Internal use only.
+	 */
+	public final void $$_markUnclean(SkeletonKey key) {
+		SkeletonKey.verify(key);
+		unclean = true;
+	}
 	
 }

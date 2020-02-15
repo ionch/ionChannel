@@ -24,7 +24,7 @@ import com.playsawdust.chipper.toolbox.MoreStrings;
 
 import social.ionch.api.JsonObjectBuilder;
 import social.ionch.api.StandardVirtuals;
-import social.ionch.api.config.ConfigHandler;
+import social.ionch.api.config.ConfigSectionHandler;
 import social.ionch.api.db.Database;
 import social.ionch.api.db.DatabaseFactory;
 import social.ionch.api.db.DatabaseFactoryRegistry;
@@ -33,6 +33,8 @@ public class H2DatabasePlugin extends BuiltInPlugin {
 
 	public H2DatabasePlugin() {
 		id("social.ionch.h2");
+		name("H2SQL Database Support");
+		author("ionChannel");
 		provides(StandardVirtuals.DATABASE);
 	}
 	
@@ -57,10 +59,10 @@ public class H2DatabasePlugin extends BuiltInPlugin {
 	@Override
 	public void enable() {
 		DatabaseFactoryRegistry.register(factory);
-		ConfigHandler.contributeSection("database.h2", new JsonObjectBuilder()
+		ConfigSectionHandler.contributeSection("database.h2", new JsonObjectBuilder()
 				.put("file", "ionch.mv.db", "Must end in .mv.db")
 				.put("writeFrequency", 0,
-						"The maximum frequency at which ionChannel will persist to the file on disk, in seconds.n" +
+						"The maximum frequency at which ionChannel will persist to the file on disk, in seconds.\n" +
 						"Higher values cause more data loss in the event of a crash but increase performance and\n" +
 						"can reduce wear on eMMC storage. If set to 0, this will be decided automatically based on\n" +
 						"the amount of buffered data. 0 is the recommended option.")
@@ -75,6 +77,7 @@ public class H2DatabasePlugin extends BuiltInPlugin {
 	@Override
 	public void hotDisable() throws UnsupportedOperationException {
 		DatabaseFactoryRegistry.unregister(factory);
+		ConfigSectionHandler.removeSection("database.h2");
 	}
 
 	@Override

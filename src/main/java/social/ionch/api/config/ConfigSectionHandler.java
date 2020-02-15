@@ -29,12 +29,13 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonGrammar;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
+import social.ionch.SkeletonKey;
 
 /**
  * Entry point for contributing sections to and working with the ionch.jkson file. Any settings the
  * admin may want to change while the server is offline should go here instead of into the database.
  */
-public class ConfigHandler {
+public class ConfigSectionHandler {
 
 	private static final String FILE_COMMENT =
 			"/* This is a Jankson file.\n" +
@@ -62,8 +63,12 @@ public class ConfigHandler {
 			.build();
 	private static final ThreadLocal<Jankson> jank = ThreadLocal.withInitial(() -> Jankson.builder().allowBareRootObject().build());
 	
-	private static final Map<String, JsonObject> contributedSections = Maps.newHashMap();
+	private static final Map<String, JsonObject> contributedSections = Maps.newLinkedHashMap();
 	private static final Map<String, String> sectionComments = Maps.newHashMap();
+	
+	private static Map<String, JsonObject> savedContributedSections = null;
+	private static Map<String, String> savedSectionComments = null;
+	private static boolean savedStateCopied = false;
 	
 	private static JsonObject consolidatedCache = null;
 	
@@ -75,6 +80,7 @@ public class ConfigHandler {
 		synchronized (contributedSections) {
 			if (contributedSections.containsKey(path))
 				throw new IllegalStateException("A section with path '"+path+"' has already been contributed");
+			copySavedStateIfNeeded();
 			contributedSections.put(path, defaults);
 			sectionComments.put(path, comment);
 			consolidatedCache = null;
@@ -85,7 +91,9 @@ public class ConfigHandler {
 		synchronized (contributedSections) {
 			if (!contributedSections.containsKey(path))
 				throw new IllegalStateException("A section with path '"+path+"' has not been contributed");
+			copySavedStateIfNeeded();
 			contributedSections.remove(path);
+			sectionComments.remove(path);
 			consolidatedCache = null;
 		}
 	}
@@ -101,7 +109,7 @@ public class ConfigHandler {
 			JsonObject root = new JsonObject();
 			for (Map.Entry<String, JsonObject> en : contributedSections.entrySet()) {
 				String key = en.getKey();
-				String parent = key.contains(".") ? key.substring(key.lastIndexOf('.')+1) : "";
+				String parent = key.contains(".") ? key.substring(0, key.lastIndexOf('.')) : "";
 				String basename = key.substring(key.lastIndexOf('.')+1);
 				JsonObject parentObj = parent.isEmpty() ? root : root.recursiveGetOrCreate(JsonObject.class, parent, empty, "");
 				parentObj.put(basename, en.getValue().clone(), sectionComments.get(en.getKey()));
@@ -130,6 +138,45 @@ public class ConfigHandler {
 	
 	public static JsonObject read(File f) throws IOException, SyntaxError {
 		return mergeDefaults(jank.get().load(f), getConsolidatedDefaults());
+	}
+	
+	private static void copySavedStateIfNeeded() {
+		if (savedContributedSections != null && !savedStateCopied) {
+			savedContributedSections = Maps.newHashMap(savedContributedSections);
+			savedSectionComments = Maps.newHashMap(savedSectionComments);
+			savedStateCopied = true;
+		}
+	}
+	
+	/**
+	 * Internal use only.
+	 */
+	public static void $$_saveState(SkeletonKey key) {
+		SkeletonKey.verify(key);
+		synchronized (contributedSections) {
+			savedContributedSections = Maps.newHashMap(contributedSections);
+			savedSectionComments = Maps.newHashMap(sectionComments);
+			savedStateCopied = false;
+		}
+	}
+
+	/**
+	 * Internal use only.
+	 */
+	public static boolean $$_restoreState(SkeletonKey key) {
+		SkeletonKey.verify(key);
+		synchronized (contributedSections) {
+			boolean rtrn = contributedSections.equals(savedContributedSections) && sectionComments.equals(savedSectionComments);
+			if (savedStateCopied) {
+				contributedSections.clear();
+				sectionComments.clear();
+				contributedSections.putAll(savedContributedSections);
+				sectionComments.putAll(savedSectionComments);
+			}
+			savedContributedSections = null;
+			savedSectionComments = null;
+			return rtrn;
+		}
 	}
 
 }
