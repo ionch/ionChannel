@@ -19,6 +19,7 @@ package social.ionch;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,7 +29,9 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.unascribed.asyncsimplelog.AsyncSimpleLog;
+import com.unascribed.asyncsimplelog.AsyncSimpleLog.LogLevel;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 
 import com.playsawdust.chipper.toolbox.io.LoggerPrintStream;
@@ -53,13 +56,15 @@ public class Bootstrap {
 	public static void main(String[] args) {
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
-//		AsyncSimpleLog.setMinLogLevel(LogLevel.TRACE);
-		AsyncSimpleLog.setAnsi(true);
 		AsyncSimpleLog.ban(Pattern.compile("org.jline", Pattern.LITERAL));
 		AsyncSimpleLog.startLogging();
 		
 		LoggerPrintStream.initializeDefault();
-		log.info("{} starting up", Version.FULLER);
+		
+		ConfigSectionHandler.contributeSection("logging", new JsonObjectBuilder()
+				.put("level", "info", "The log level to, well, log at. Can be trace, debug, info, warn, or error.")
+				.put("ansi", true, "If true, ANSI escape codes will be used to colorize log output.")
+				.build(), "Settings for logging.");
 		
 		ConfigSectionHandler.contributeSection("plugins", new JsonObjectBuilder()
 				.put("search", new JsonArrayBuilder()
@@ -70,7 +75,7 @@ public class Bootstrap {
 				.build(), "Settings for enabling, disabling, and finding plugins.");
 		
 		ConfigSectionHandler.contributeSection("database", new JsonObjectBuilder()
-				.put("backend", "h2")
+				.put("backend", "h2", "Which database backend to use.")
 				.build(), "Settings for connecting to a database.");
 		
 		File cfgFile = new File("ionch.jkson");
@@ -90,6 +95,22 @@ public class Bootstrap {
 		} else {
 			cfg = ConfigSectionHandler.getConsolidatedDefaults();
 		}
+		
+		AsyncSimpleLog.setAnsi(cfg.recursiveGet(boolean.class, "logging.ansi"));
+		String levelStr = cfg.recursiveGet(String.class, "logging.level");
+		switch (levelStr.toLowerCase(Locale.ROOT)) {
+			case "trace": AsyncSimpleLog.setMinLogLevel(LogLevel.TRACE); break;
+			case "debug": AsyncSimpleLog.setMinLogLevel(LogLevel.DEBUG); break;
+			case "info": AsyncSimpleLog.setMinLogLevel(LogLevel.INFO); break;
+			case "warn": AsyncSimpleLog.setMinLogLevel(LogLevel.WARN); break;
+			case "error": AsyncSimpleLog.setMinLogLevel(LogLevel.ERROR); break;
+			default:
+				AsyncSimpleLog.setMinLogLevel(LogLevel.INFO);
+				log.warn("Unknown log level {} in config - defaulting to info", levelStr);
+				break;
+		}
+		
+		log.info("{} starting up", Version.FULLER);
 		
 		PluginManager.addPlugin(new H2DatabasePlugin());
 		
@@ -149,8 +170,19 @@ public class Bootstrap {
 				return;
 			}
 		}
-		log.info("Enabled {} plugins in {}", resolved.size(), sw);
-		sw.reset().start();
+		log.info("Enabled {} plugin{} in {}", resolved.size(), resolved.size() == 1 ? "" : "s", sw);
+		if (cfg.containsKey("database") && cfg.get(JsonObject.class, "database").containsKey("backend")) {
+			cfg.get(JsonObject.class, "database").setComment("backend", "Which database backend to use.\nValid options: "+Joiner.on(", ").join(DatabaseFactoryRegistry.allNames()));
+		}
+		sw.reset();
+		try {
+			ConfigSectionHandler.write(cfgFile, cfg);
+		} catch (IOException e) {
+			log.error("IO error while trying to write ionch.jkson", e);
+			System.exit(3);
+			return;
+		}
+		sw.start();
 		for (Plugin p : resolved) {
 			log.debug("Initializing {}", p.toFriendlyString());
 			try {
@@ -161,14 +193,7 @@ public class Bootstrap {
 				return;
 			}
 		}
-		log.info("Initialized {} plugins in {}", resolved.size(), sw);
-		try {
-			ConfigSectionHandler.write(cfgFile, cfg);
-		} catch (IOException e) {
-			log.error("IO error while trying to write ionch.jkson", e);
-			System.exit(3);
-			return;
-		}
+		log.info("Initialized {} plugin{} in {}", resolved.size(), resolved.size() == 1 ? "" : "s", sw);
 	}
 	
 	private static String jsonElementToString(JsonElement e) {

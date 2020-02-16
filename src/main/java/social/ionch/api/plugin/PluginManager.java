@@ -239,7 +239,7 @@ public class PluginManager {
 				allPlugins.put(p.getId(), p);
 			}
 		}
-		log.info("Discovered {} plugins ({} built-in) in {} files in {}", allPlugins.size(), builtIn, Sets.newHashSet(sourceFiles.values()).size(), sw);
+		log.info("Discovered {} plugin{} ({} built-in) in {} files in {}", allPlugins.size(), allPlugins.size() == 1 ? "" : "s", builtIn, Sets.newHashSet(sourceFiles.values()).size(), sw);
 		Multimap<Plugin, Plugin> unresolvedWants = HashMultimap.create();
 		Multimap<String, Plugin> conflicts = HashMultimap.create();
 		Multimap<String, Plugin> provides = HashMultimap.create();

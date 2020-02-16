@@ -17,7 +17,7 @@
 package social.ionch.api.db;
 
 import java.util.Map;
-
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 import blue.endless.jankson.JsonObject;
@@ -126,6 +126,10 @@ public final class DatabaseFactoryRegistry {
 				facsimilies.remove(name);
 			}
 		}
+	}
+	
+	public static ImmutableSet<String> allNames() {
+		return ImmutableSet.copyOf(registry.keySet());
 	}
 	
 	private static void copySavedStateIfNeeded() {

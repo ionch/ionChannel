@@ -24,8 +24,10 @@ ionch is pronounced like "ion" (EYE-on) followed by the "-ch" in "crunch".
 
 ## Logo
 It's a flamingo[!](https://youtube.com/watch?v=rY-FJvRqK0E) A very stylized one, but a flamingo
-nonetheless. The beak, when rotated to be horizontal, additionally resembles a rectangularly speech
-bubble.
+nonetheless. The beak, when rotated to be horizontal, additionally resembles a rectangular speech
+bubble. There's a specially deformed version for display at 16x16 on standard density
+displays: ![](doc/logo-small.png) (compare with the standard version at this resolution:
+![](doc/logo-wrong-small.png))
 
 ## Project Status
 ionChannel is a very early work-in-progress at this point. Progress is slow, but it is there.

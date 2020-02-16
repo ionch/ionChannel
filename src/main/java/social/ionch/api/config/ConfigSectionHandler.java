@@ -112,19 +112,30 @@ public class ConfigSectionHandler {
 				String parent = key.contains(".") ? key.substring(0, key.lastIndexOf('.')) : "";
 				String basename = key.substring(key.lastIndexOf('.')+1);
 				JsonObject parentObj = parent.isEmpty() ? root : root.recursiveGetOrCreate(JsonObject.class, parent, empty, "");
-				parentObj.put(basename, en.getValue().clone(), sectionComments.get(en.getKey()));
+				parentObj.put(basename, merge(parentObj.get(basename), en.getValue().clone()), sectionComments.get(en.getKey()));
 			}
 			consolidatedCache = root;
 			return root;
 		}
 	}
 	
+	private static JsonElement merge(JsonElement a, JsonElement b) {
+		if (a instanceof JsonObject && b instanceof JsonObject) {
+			JsonObject out = ((JsonObject)a).clone();
+			for (Map.Entry<String, JsonElement> en : ((JsonObject)b).entrySet()) {
+				out.put(en.getKey(), merge(out.get(en.getKey()), en.getValue()), ((JsonObject)b).getComment(en.getKey()));
+			}
+			return out;
+		}
+		return b;
+	}
+
 	private static JsonObject mergeDefaults(JsonObject obj, JsonObject defaults) {
 		JsonObject target = obj.clone();
 		for (Map.Entry<String, JsonElement> en : defaults.entrySet()) {
 			String comment = defaults.getComment(en.getKey());
 			if (target.get(en.getKey()) instanceof JsonObject && en.getValue() instanceof JsonObject) {
-				mergeDefaults((JsonObject)target.get(en.getKey()), (JsonObject)en.getValue());
+				target.put(en.getKey(), mergeDefaults((JsonObject)target.get(en.getKey()), (JsonObject)en.getValue()));
 			} else {
 				target.put(en.getKey(), en.getValue().clone(), comment);
 			}
