@@ -16,17 +16,19 @@
 
 package social.ionch.api.plugin;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.ProcessBuilder.Redirect;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,15 +39,17 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipException;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.WindowConstants;
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
-
-import com.unascribed.asyncsimplelog.AsyncSimpleLog;
-
 import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
@@ -57,12 +61,13 @@ import com.google.common.collect.Sets;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
+import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.CharSink;
 import com.google.common.io.Files;
 
 import com.playsawdust.chipper.toolbox.lipstick.SharedRandom;
 
+import social.ionch.api.Env;
 import social.ionch.api.ResourcefulReadWriteLock;
 import social.ionch.api.ResourcefulReadWriteLock.HeldLock;
 import social.ionch.builtin.BuiltInPlugin;
@@ -274,89 +279,136 @@ public class PluginManager {
 			log.info("{} is wanted by {}\nHowever, it is not going to be enabled",
 					p.getKey().toFriendlyString(), summarize(p.getValue(), Plugin::toFriendlyString));
 		}
-		CharSink dot = Files.asCharSink(new File("plugins.dot"), Charsets.UTF_8);
-		try (Writer w = dot.openStream()) {
-			w.write("digraph plugins {\n");
-			for (Plugin p : graph.nodes()) {
-				if (graph.degree(p) == 0 || enable.contains(p.getId())) {
-					w.write("\t\"");
-					w.write(p.getId());
-					w.write("\"");
-					if (enable.contains(p.getId())) {
-						w.write(" [color=lime]");
-					}
-					w.write(";\n");
-				}
-			}
-			for (EndpointPair<Plugin> ep : graph.edges()) {
-				EdgeType val = graph.edgeValue(ep).orElse(null);
-				w.write("\t\"");
-				w.write(ep.source().getId());
-				w.write("\" -> \"");
-				if (val.isProvide()) {
-					w.write(Iterables.getFirst(Sets.intersection(val.isNeed() ? ep.source().getNeeds() : ep.source().getWants(), ep.target().getProvides()), ep.target().getId()));
+		if (Env.isTruthy("IONCH_GENERATE_PLUGINS_DOT") || Env.isTruthy("IONCH_DISPLAY_PLUGINS_DOT")) {
+			try {
+				Writer w;
+				if (Env.isTruthy("IONCH_DISPLAY_PLUGINS_DOT")) {
+					log.info("Displaying plugins.dot via dot and built-in Swing-based viewer");
+					Process p = new ProcessBuilder("dot", "-Tpng", "-Nfontname=sans-serif")
+							.redirectError(Redirect.INHERIT)
+							.start();
+					w = new OutputStreamWriter(p.getOutputStream(), Charsets.UTF_8);
+					new Thread(() -> {
+						byte[] png;
+						try {
+							png = ByteStreams.toByteArray(p.getInputStream());
+						} catch (IOException e) {
+							log.warn("Failed to receive PNG from dot", e);
+							return;
+						}
+						int code;
+						while (true) {
+							try {
+								code = p.waitFor();
+								break;
+							} catch (InterruptedException e) {}
+						}
+						if (code != 0) {
+							log.warn("dot exited with failure");
+							return;
+						}
+						JFrame viewer = new JFrame("ionChannel Plugins");
+						viewer.setContentPane(new JLabel(new ImageIcon(png)));
+						viewer.pack();
+						try {
+							viewer.setIconImages(Lists.newArrayList(
+									ImageIO.read(new ByteArrayInputStream(BaseEncoding.base64().decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAYFBMVEXpHmPqI2b////xcJzpH2PpHmPpHmPoHmL/ADzoHWPtQnzzfaX0jK/70eD1lLX71+PqJmn+9Pjzh6ztR4D97PLuT4X5wdXwYZL2or/5x9jsOHXrK2z95u784Or3rsf5vdGmo/IQAAAACnRSTlPb////2f//bwFxdaFcJwAAAI1JREFUGBkFwYdxwzAQALAnGZxk9V5c998yQNSPIJXf3U1EVccDa/97pnZ8oopgn3uZ80YE51a2HWYIy3udhs/E+oZIY1vm/mpSuxUI6/bt2MejAcGSiyV3gMC9t7kDCDyb+QAkAW1ugGYSMOQXOBsCSl6QuoIIpDF/2+Fz4S8qeF19fwwJVdRVABBV/Q8TOAjhTPDqMQAAAABJRU5ErkJggg=="))),
+									ImageIO.read(new ByteArrayInputStream(BaseEncoding.base64().decode("iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAYFBMVEVMaXHpHmTqHWPtG2LpHmPrHmPoF2HpHmPpHWPpHmPqHWPpHmP////qKWv+9PfqImbuTIPtPnn2mbn96vH3qcTsNHL4tcz0iq770d/vVor83+nzfKTxbpvwYJH/+/z6xthQqmKCAAAACnRSTlMA9oEbqjIKyNhExzPbZAAAAwRJREFUWMOdV9mWgyAMddrp2B5kFUHF5f//cgTcCdg2T5SaS3KTQJJlszxu+fMHvSU/z/z2yI7yytGH8nzt1P9+I19RZrTQfQX++fu36N+fsDoXZeGl7ihkxH0+H9bHYig2qRmE4G2A7WftpEaUNkbaVTEYyAvHH6jfkEldY/+jry0EhGCZzGP6Nd/IFBahCb/Lp/hD+sZ6jc87JQ6/fGQ3IHj2vNbHji3k2T0RfnsDPKicx71bq6JQM+pEJcGAD0EMGx/80Z1vV2xzogsjmZ3z3yzR704Adq3DushO2aOcMlko21xAfNqTIQkZ4H4h+LAct5LoANQFQE/c8b3nnBxrqLkG0O741uYPLgODNRzH7Oy+wivnx9QbwShsANyXzMqzZaPeF5f9m8cBOud+2Rxc3p1I6yU3YADhi36ljfZyOGS/3LITBHD+y/naoY1crqLZI+r0FYoDVGTluFkvsskCsUuPFicAXJAGjqq9tpwZ6d1eyVEKALfORr1oE9nPDlVqS48EAOpc4MeT9rQ/F2eFLgBc4FtLvdq0EfeIg6DoEoDNxre7q8kQv9XEX6hdLUgPsFUAr6+OPwJUpDhkn09O+ElJVWOF9sk5aIreBnChrPe5ty+ONwBcKMWekLpCHwHYmm923tQYfQjAigGvtVyU1+efAZAcVzLAt/ASoDJbACT6AmCXECX+GsAbYNC3ANi/DkkDcAqgu2YA9ykAn0N9CsDQFIC/QXhCv2MpDrC/lBL6TCdJZFcAlaJvAAxRfTrydwDiHEiDeBKgKpJ5JEbUpC1AZGuyQtGEM3aRif4hgRNBFwbrq1TuithtMN1ziqrjfhaOOXh+HoP7qGknVNGd2rwnZGcRPoe0dz2OUedGE2jWaT0jDHKB4Lr1k8v5jc+hZhtxsk0qQhvtRw5rE+FBs/2IjQuQEBa2+/DAwUpIP3xm8ujIM7cVBwF6hFd86ELsCEEkiwxd2V9saq2M8uyRUfTQG5vPo+c9MfdSznnses3vl6NvUrbR96vhO3+d5vdvx/9/IHC8SD2KX64AAAAASUVORK5CYII=")))
+								));
+						} catch (IOException e) {
+							throw new AssertionError(e);
+						}
+						viewer.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+						viewer.setVisible(true);
+					}, "dot listener").start();
 				} else {
-					w.write(ep.target().getId());
+					log.info("Generating plugins.dot");
+					w = Files.asCharSink(new File("plugins.dot"), Charsets.UTF_8).openStream();
 				}
-				w.write("\"");
-				if (!val.isNeed()) {
-					w.write(" [style=dashed]");
-				}
-				w.write(";\n");
-			}
-			for (Plugin p : allPlugins.values()) {
-				for (String s : p.getProvides()) {
-					w.write("\t\"");
-					w.write(s);
-					w.write("\"");
-					w.write(" [color=blue] [shape=box]");
-					w.write(";\n");
-					w.write("\t\"");
-					w.write(p.getId());
-					w.write("\" -> \"");
-					w.write(s);
-					w.write("\"");
-					w.write(" [color=blue]");
-					w.write(";\n");
-				}
-				if (graph.nodes().contains(p)) continue;
-				w.write("\t\"");
-				w.write(p.getId());
-				w.write("\" [style=dotted]");
-				w.write(";\n");
-				for (String conflict : p.getConflicts()) {
-					if (allPlugins.containsKey(conflict)) {
+				try (w) {
+					w.write("digraph plugins {\n");
+					for (Plugin p : graph.nodes()) {
+						if (graph.degree(p) == 0 || enable.contains(p.getId())) {
+							w.write("\t\"");
+							w.write(p.getId());
+							w.write("\"");
+							if (enable.contains(p.getId())) {
+								w.write(" [color=green]");
+							}
+							w.write(";\n");
+						}
+					}
+					for (EndpointPair<Plugin> ep : graph.edges()) {
+						EdgeType val = graph.edgeValue(ep).orElse(null);
 						w.write("\t\"");
-						w.write(p.getId());
+						w.write(ep.source().getId());
 						w.write("\" -> \"");
-						w.write(conflict);
+						if (val.isProvide()) {
+							w.write(Iterables.getFirst(Sets.intersection(val.isNeed() ? ep.source().getNeeds() : ep.source().getWants(), ep.target().getProvides()), ep.target().getId()));
+						} else {
+							w.write(ep.target().getId());
+						}
 						w.write("\"");
-						w.write(" [color=red]");
+						if (!val.isNeed()) {
+							w.write(" [style=dashed]");
+						}
 						w.write(";\n");
 					}
+					for (Plugin p : allPlugins.values()) {
+						for (String s : p.getProvides()) {
+							w.write("\t\"");
+							w.write(s);
+							w.write("\"");
+							w.write(" [color=blue] [shape=box]");
+							w.write(";\n");
+							w.write("\t\"");
+							w.write(p.getId());
+							w.write("\" -> \"");
+							w.write(s);
+							w.write("\"");
+							w.write(" [color=blue] [arrowhead=tee] [style=bold]");
+							w.write(";\n");
+						}
+						if (graph.nodes().contains(p)) continue;
+						w.write("\t\"");
+						w.write(p.getId());
+						w.write("\" [style=dotted]");
+						w.write(";\n");
+						for (String conflict : p.getConflicts()) {
+							if (allPlugins.containsKey(conflict)) {
+								w.write("\t\"");
+								w.write(p.getId());
+								w.write("\" -> \"");
+								w.write(conflict);
+								w.write("\"");
+								w.write(" [color=red] [arrowhead=onormal]");
+								w.write(";\n");
+							}
+						}
+					}
+					for (Map.Entry<String, Plugin> s : conflicts.entries()) {
+						w.write("\t\"");
+						w.write(s.getValue().getId());
+						w.write("\" -> \"");
+						w.write(s.getKey());
+						w.write("\"");
+						w.write(" [color=red] [arrowhead=onormal]");
+						w.write(";\n");
+					}
+					for (Map.Entry<Plugin, Plugin> s : unresolvedWants.entries()) {
+						w.write("\t\"");
+						w.write(s.getValue().getId());
+						w.write("\" -> \"");
+						w.write(s.getKey().getId());
+						w.write("\"");
+						w.write(" [style=dashed]");
+						w.write(";\n");
+					}
+					w.write("}");
 				}
+			} catch (IOException e) {
+				log.warn("IO error while attempting to create dot file", e);
 			}
-			for (Map.Entry<String, Plugin> s : conflicts.entries()) {
-				w.write("\t\"");
-				w.write(s.getValue().getId());
-				w.write("\" -> \"");
-				w.write(s.getKey());
-				w.write("\"");
-				w.write(" [color=red]");
-				w.write(";\n");
-			}
-			for (Map.Entry<Plugin, Plugin> s : unresolvedWants.entries()) {
-				w.write("\t\"");
-				w.write(s.getValue().getId());
-				w.write("\" -> \"");
-				w.write(s.getKey().getId());
-				w.write("\"");
-				w.write(" [style=dashed]");
-				w.write(";\n");
-			}
-			w.write("}");
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		
 		// Kahn's algorithm
@@ -485,53 +537,6 @@ public class PluginManager {
 			return cn.name.replace('/', '.');
 		}
 		return null;
-	}
-
-	public static void main(String[] args) {
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
-		AsyncSimpleLog.setAnsi(true);
-		AsyncSimpleLog.startLogging();
-		addPlugin(new TestPlugin() {{
-			id("test1");
-			needs("nothere");
-		}});
-		addPlugin(new TestPlugin() {{
-			id("test2");
-			provides("?testVirtual");
-			conflicts("test3");
-		}});
-		addPlugin(new TestPlugin() {{
-			id("test3");
-			needs("?testVirtual");
-		}});
-		addPlugin(new TestPlugin() {{
-			id("test4");
-			provides("?testVirtual");
-		}});
-		resolve(Collections.emptyList(), Collections.emptySet(), Collections.emptySet());
-	}
-	
-	private static class TestPlugin extends Plugin {
-
-		@Override
-		public void enable() {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void hotDisable() throws UnsupportedOperationException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void init() {
-			// TODO Auto-generated method stub
-
-		}
-
 	}
 
 }
