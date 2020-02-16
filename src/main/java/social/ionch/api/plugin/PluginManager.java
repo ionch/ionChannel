@@ -118,6 +118,7 @@ public class PluginManager {
 		Set<String> unknownDisables = Sets.newHashSet(disable);
 		Stopwatch sw = Stopwatch.createStarted();
 		for (File dir : search) {
+			if (!dir.isDirectory()) continue;
 			for (File child : dir.listFiles()) {
 				if (child.getName().endsWith(".ion")) {
 					File target;
