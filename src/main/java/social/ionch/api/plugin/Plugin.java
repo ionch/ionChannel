@@ -40,12 +40,19 @@ public abstract class Plugin {
 	
 	/**
 	 * Set this plugin's ID. Must be called in the constructor. Should be like a Java package name
-	 * to avoid conflicts, such as "social.ionch.h2". Cannot start with a ? - IDs starting with a
-	 * question mark are virtual and may only be used with provides.
+	 * to avoid conflicts, such as "social.ionch.builtin.h2". Cannot start with a ? - IDs starting
+	 * with a question mark are virtual and may only be used with {@link #provides}.
 	 */
 	protected final void id(String id) {
 		if (this.id != null) throw new IllegalStateException("ID is already set");
 		if (id.startsWith("?")) throw new IllegalArgumentException("A plugin's ID cannot be virtual");
+		if (id.startsWith("social.ionch.builtin") != (this instanceof BuiltInPlugin)) {
+			if (this instanceof BuiltInPlugin) {
+				throw new IllegalArgumentException("Built-in plugins must have IDs starting with social.ionch.builtin");
+			} else {
+				throw new IllegalArgumentException("Only built-in plugins may have IDs starting with social.ionch.builtin");
+			}
+		}
 		this.id = id;
 	}
 	/**

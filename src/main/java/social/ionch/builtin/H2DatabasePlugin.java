@@ -32,7 +32,7 @@ import social.ionch.api.db.DatabaseFactoryRegistry;
 public class H2DatabasePlugin extends BuiltInPlugin {
 
 	public H2DatabasePlugin() {
-		id("social.ionch.h2");
+		id("social.ionch.builtin.h2");
 		name("H2SQL Database Support");
 		author("ionChannel");
 		provides(StandardVirtuals.DATABASE);
@@ -40,7 +40,7 @@ public class H2DatabasePlugin extends BuiltInPlugin {
 	
 	private final DatabaseFactory factory = DatabaseFactory.from("h2", (config) -> {
 		String fileStr = MoreStrings.removeSuffix(config.get(String.class, "file"), ".mv.db");
-		String url = "jdbc:h2:"+UrlEscapers.urlPathSegmentEscaper().escape(fileStr).replace("%2F", "/");
+		String url = "jdbc:h2:"+UrlEscapers.urlPathSegmentEscaper().escape(fileStr).replace("%2F", "/")+";FILE_LOCK=FS;COMPRESS=true;DB_CLOSE_DELAY=30";
 		JdbcConnectionPool jcp = JdbcConnectionPool.create(url, "", "");
 		return new Database() {
 			
@@ -61,11 +61,6 @@ public class H2DatabasePlugin extends BuiltInPlugin {
 		DatabaseFactoryRegistry.register(factory);
 		ConfigSectionHandler.contributeSection("database.h2", new JsonObjectBuilder()
 				.put("file", "ionch.mv.db", "Must end in .mv.db")
-				.put("writeFrequency", 0,
-						"The maximum frequency at which ionChannel will persist to the file on disk, in seconds.\n" +
-						"Higher values cause more data loss in the event of a crash but increase performance and\n" +
-						"can reduce wear on eMMC storage. If set to 0, this will be decided automatically based on\n" +
-						"the amount of buffered data. 0 is the recommended option.")
 				.build(),
 			"Options for using the H2SQL database backend. H2SQL is a fast pure Java SQL database comparable\n" +
 			"to SQLite. It is ionChannel's default backend, and the recommended one for most users. H2SQL\n" +

@@ -263,8 +263,8 @@ public class PluginManager {
 				log.error("Cannot enable {} as it cannot be found", en);
 				return null;
 			}
-			if (!addPluginToGraph(disable, allPlugins, unresolvedWants, conflicts, provides,
-					graph, p)) {
+			if (!addPluginToGraph(enable, disable, allPlugins, unresolvedWants, conflicts,
+					provides, graph, p)) {
 				return null;
 			}
 		}
@@ -433,7 +433,6 @@ public class PluginManager {
 		}
 
 		if (!graph.edges().isEmpty()) {
-			System.out.println(graph);
 			log.error("There is a dependency cycle");
 			return null;
 		}
@@ -450,12 +449,11 @@ public class PluginManager {
 		return toString.apply(Iterables.getFirst(c, null))+" and "+(c.size()-1)+" others";
 	}
 
-	private static boolean addPluginToGraph(Set<String> disable,
+	private static boolean addPluginToGraph(Set<String> enable, Set<String> disable,
 			Map<String, Plugin> allPlugins,
-			Multimap<Plugin, Plugin> unresolvedWants,
-			Multimap<String, Plugin> conflicts, Multimap<String, Plugin> provides,
-			MutableValueGraph<Plugin, EdgeType> graph,
-			Plugin p) {
+			Multimap<Plugin, Plugin> unresolvedWants, Multimap<String, Plugin> conflicts,
+			Multimap<String, Plugin> provides,
+			MutableValueGraph<Plugin, EdgeType> graph, Plugin p) {
 		if (conflicts.containsKey(p.getId())) {
 			log.error("Cannot enable {}\nIt conflicts with {}",
 					p.toFriendlyString(), summarize(conflicts.get(p.getId()), Plugin::toFriendlyString));
@@ -466,18 +464,31 @@ public class PluginManager {
 		Set<Plugin> edgesWant = Sets.newHashSet();
 		Set<Plugin> edgesWantProvide = Sets.newHashSet();
 		for (String need : p.getNeeds()) {
-			if (provides.containsKey(need)) {
-				log.debug("{} needs {} which is provided by {}", p.getId(), need, summarize(provides.get(need), Plugin::getId));
-				edgesNeedProvide.addAll(provides.get(need));
-				continue;
-			}
 			Plugin needP = allPlugins.get(need);
 			if (needP == null) {
+				if (provides.containsKey(need)) {
+					log.debug("{} needs {} which is provided by {}", p.getId(), need, summarize(provides.get(need), Plugin::getId));
+					boolean foundOne = false;
+					for (Plugin provider : provides.get(need)) {
+						if (graph.nodes().contains(provider)
+								|| (provider instanceof BuiltInPlugin && !disable.contains(provider.getId()))
+								|| enable.contains(provider.getId())) {
+							log.debug("Provider {} will be enabled, depending on that");
+							edgesNeedProvide.add(provider);
+							foundOne = true;
+						}
+					}
+					if (!foundOne) {
+						log.warn("Cannot enable {}\nIt needs a provider of {} but none are going to be enabled\nKnown providers include {}", p.toFriendlyString(), need, summarize(provides.get(need), Plugin::toFriendlyString));
+						return false;
+					}
+					continue;
+				}
 				log.warn("Cannot enable {}\nIt needs {} which cannot be found", p.toFriendlyString(), need);
 				return false;
 			}
 			log.debug("Enabling {} as it's needed by {}", needP.getId(), p.getId());
-			if (addPluginToGraph(disable, allPlugins, unresolvedWants, conflicts, provides, graph, needP)) {
+			if (addPluginToGraph(enable, disable, allPlugins, unresolvedWants, conflicts, provides, graph, needP)) {
 				edgesNeed.add(needP);
 			} else {
 				log.warn("Cannot enable {}\nIt needs {} which could not be enabled",
